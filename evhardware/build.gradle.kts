@@ -1,8 +1,8 @@
 // Vendored MG4 EVHardware (from fatihdonmezdev/MG4ABRP EVHardware/lib).
 // Embedded in DiAuto-MG4 so the full MG4ABRP tree is not required as a submodule.
+// Copied from Skittle6938/DiAuto-MG4 (5e2e6d8). AGP 9 builds Kotlin in, so no kotlin.android plugin.
 plugins {
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
