@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.3 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Lane guidance on the dashboard.** With Directions on the dashboard on, CarPlay's lane arrows (iAP2 0x5204) now show on the cluster's navigation card: grey lanes and the lanes to take lit, including combined arrows such as straight-and-right. The car asks the iPhone for lanes the way upstream DiPlay does (MaxLaneGuidanceDescriptionLength and MaxLaneGuidanceStorageCapacity), the lane parser is ported from upstream, and the lanes go to the car's `IMapService.vehicleLaneInfoChanged` (48) as the cluster app's lane codes, read from the SWI68 `clusterprojection` app. Logged as `Cluster nav: lanes` lines with the raw lanes from the iPhone.
+
 mg4.96-swi68.2 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Map on the dashboard (experimental).** New in Settings > Car, off by default: Off, Map or Next turn. CarPlay is asked for its instrument-cluster screen (the alternate screen, stream 111, which upstream DiPlay drew on BYD clusters before the BYD code was removed) and it is shown in the square in the middle of the cluster. The cluster shows that square from the head unit's second Android display (display 1, 800x480), where the car's `clusterprojection` app draws a 260 px square; MG4Control found that a window over it shows on the cluster. The map covers the square only on the cluster's Navigation page and moves aside on the others, so the Music page keeps the car's song card. Logged as `Cluster map:` lines. Unknowns: whether the head unit decodes two CarPlay video streams at once, and how Apple Maps lays out such a small square.

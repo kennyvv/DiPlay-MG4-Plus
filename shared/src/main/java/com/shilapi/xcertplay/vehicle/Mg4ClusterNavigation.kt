@@ -8,6 +8,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Parcel
+import com.shilapi.xcertplay.iap2.message.Iap2LaneGuidance
+import com.shilapi.xcertplay.iap2.message.LaneGuidanceLane
 import com.shilapi.xcertplay.iap2.wire.Iap2Frame
 
 /**
@@ -23,6 +25,7 @@ import com.shilapi.xcertplay.iap2.wire.Iap2Frame
  * - `guideInfosChange(int icon, int metres, String road)` 30: next turn.
  * - `roadInfoChange(String)` 31, `remainingTimesChange(int minutes)` 38,
  *   `remainingDistanceChange(int metres)` 39, `isMapNavigating(boolean)` 22.
+ * - `vehicleLaneInfoChanged(String)` 48: CarPlay's lane guidance (0x5204), see [Mg4ClusterLanes].
  *
  * Icons are the cluster's default (EU/UK, `ic_tbt_N`) set; see [icon].
  */
@@ -36,6 +39,7 @@ object Mg4ClusterNavigation {
     private const val TX_ROAD_INFO = 31
     private const val TX_REMAINING_TIMES = 38
     private const val TX_REMAINING_DISTANCE = 39
+    private const val TX_VEHICLE_LANE_INFO = 48
     private const val TICK_MILLIS = 1_000L
 
     // Lazy so the pure [icon] mapping can be used (and unit tested) without starting a thread.
@@ -46,6 +50,8 @@ object Mg4ClusterNavigation {
     private var guiding = false
     private var lastSent: RouteManeuver? = null
     private var lastRoad: String? = null
+    private var lanes: List<LaneGuidanceLane> = emptyList()
+    private var lastLanes = ""
     private var report: (String) -> Unit = {}
 
     private val connection = object : ServiceConnection {
@@ -83,8 +89,16 @@ object Mg4ClusterNavigation {
         if (ok) handler.postDelayed(tick, TICK_MILLIS)
     }
 
-    /** Route guidance frames (0x5201/0x5202) from the iPhone. */
+    /** Route guidance frames (0x5201/0x5202) and lane guidance (0x5204) from the iPhone. */
     fun onFrame(frame: Iap2Frame) {
+        if (frame.messageId == Iap2LaneGuidance.LANE_GUIDANCE_UPDATE) {
+            val parsed = Iap2LaneGuidance.parse(frame.payload)
+            handler.post {
+                lanes = parsed
+                publishLanes()
+            }
+            return
+        }
         if (frame.messageId != RouteGuidanceState.ROUTE_GUIDANCE_UPDATE &&
             frame.messageId != RouteGuidanceState.ROUTE_GUIDANCE_MANEUVER_UPDATE) return
         handler.post {
@@ -96,6 +110,8 @@ object Mg4ClusterNavigation {
     fun stop(context: Context) = handler.post {
         route.clear()
         publish()
+        lanes = emptyList()
+        lastLanes = ""
         handler.removeCallbacks(tick)
         if (bound) runCatching { context.applicationContext.unbindService(connection) }
         bound = false
@@ -107,6 +123,8 @@ object Mg4ClusterNavigation {
         val maneuver = route.current()
         if (maneuver == null) {
             if (guiding) {
+                lanes = emptyList()
+                publishLanes()
                 call(service, TX_GUIDE_STATUS) { writeInt(0) }
                 call(service, TX_IS_MAP_NAVIGATING) { writeInt(0) }
                 guiding = false
@@ -122,6 +140,7 @@ object Mg4ClusterNavigation {
             guiding = true
             report("Cluster nav: guidance started sent=$ok")
         }
+        publishLanes()
         if (maneuver == lastSent) return
         val icon = icon(maneuver.type, maneuver.drivingSide)
         val ok = call(service, TX_GUIDE_INFOS) {
@@ -145,6 +164,18 @@ object Mg4ClusterNavigation {
                 "distance=${maneuver.distanceMeters}m road=\"${maneuver.road}\" sent=$ok")
         }
         lastSent = maneuver
+    }
+
+    /** Lanes go to the cluster only while it guides; an empty strip clears them. */
+    private fun publishLanes() {
+        val service = binder?.takeIf { it.isBinderAlive } ?: return
+        val drivingSide = route.current()?.drivingSide ?: 0
+        val encoded = if (guiding) Mg4ClusterLanes.encode(lanes, drivingSide) else ""
+        if (encoded == lastLanes) return
+        val ok = call(service, TX_VEHICLE_LANE_INFO) { writeString(encoded) }
+        val detail = lanes.joinToString(";") { "${it.index}:${it.status}:${it.angles}:${it.highlightAngle}" }
+        report("Cluster nav: lanes \"$encoded\" from [$detail] sent=$ok")
+        lastLanes = encoded
     }
 
     private inline fun call(service: IBinder, code: Int, write: Parcel.() -> Unit): Boolean {
