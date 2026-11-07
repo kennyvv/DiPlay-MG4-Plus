@@ -23,12 +23,17 @@ class SettingsModelTest {
 
     @Test fun dashboardMapSongAndArtAreExperimentalOnTheEh32Cluster() {
         val experimental = rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165))
-        val added = listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)
+        val added = listOf(
+            SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART,
+            SettingRow.CARPLAY_WHEEL,
+        )
         // In the order they were added.
         assertEquals(added, experimental)
+        // The wheel switch is read on every key press; the others need a reconnect.
+        assertFalse(SettingRow.CARPLAY_WHEEL.appliesOnReconnect)
         for (row in added) {
             assertTrue(row.name, row in experimental)
-            assertTrue(row.name, row.appliesOnReconnect)
+            if (row != SettingRow.CARPLAY_WHEEL) assertTrue(row.name, row.appliesOnReconnect)
             SettingsCategory.entries.filter { it != SettingsCategory.EXPERIMENTAL }.forEach {
                 assertFalse(row.name, row in rows(it, env(Generation.SWI165)))
             }

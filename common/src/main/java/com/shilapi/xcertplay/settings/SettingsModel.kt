@@ -63,6 +63,8 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     CLUSTER_LANES(RowKind.SEGMENTED, true),
     CLUSTER_SONG(RowKind.SWITCH, true),
     CLUSTER_ALBUM_ART(RowKind.SWITCH, true),
+    // Takes effect straight away: the key filter checks the switch on every press.
+    CARPLAY_WHEEL(RowKind.SWITCH),
     // Turning location on asks for permission and reconnects by itself, as before.
     SEND_LOCATION(RowKind.SWITCH),
     VIDEO_WHILE_PARKED(RowKind.SWITCH, true),
@@ -150,6 +152,7 @@ internal object SettingsLayout {
             SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP)),
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
             SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)),
+            SettingsGroup("carplay_wheel", listOf(SettingRow.CARPLAY_WHEEL)),
         ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),

@@ -663,6 +663,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 AirPlayPersistence.loadAdvancedAudioChannelMapping(this)
         maybeStartCarPlay()
         applyFullscreenMode()
+        CarPlayWheel.onScreen = true
     }
 
     // The steering-wheel voice key reaches the focused window; while CarPlay is on screen it opens Siri.
@@ -682,6 +683,7 @@ class CarPlayHostActivity : ComponentActivity() {
 
     override fun onStop() {
         // The controller, USB/iAP2 link, and VPN attachment intentionally outlive the UI.
+        CarPlayWheel.onScreen = false
         super.onStop()
     }
 
@@ -3117,6 +3119,8 @@ class CarPlayHostActivity : ComponentActivity() {
             onScreenStreamStateChanged(restartGeneration, type, active)
         }
         if (Mg4ClusterMap.isShown) Mg4ClusterMap.attach(this, snapshot.sink, ::appendLog)
+        CarPlayWheel.controller = snapshot.controller
+        CarPlayWheel.log = ::appendLog
         attachClusterSong(snapshot.controller)
         attachClusterLanes()
         currentSurface?.let(::attachSurface)
@@ -3235,6 +3239,8 @@ class CarPlayHostActivity : ComponentActivity() {
             albumArt = albumArtEnabled(),
         )
         controller = next
+        CarPlayWheel.controller = next
+        CarPlayWheel.log = ::appendLog
         attachClusterSong(next)
         attachClusterLanes()
         armStartupWatchdog()
@@ -3602,6 +3608,7 @@ class CarPlayHostActivity : ComponentActivity() {
         val oldSink = sink
         CarPlayMediaKeys.detach(oldController)
         CarPlayBackgroundSession.clear(oldController)
+        if (CarPlayWheel.controller === oldController) CarPlayWheel.controller = null
         oldController?.songListener = null
         oldController?.artworkListener = null
         com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.laneListener = null

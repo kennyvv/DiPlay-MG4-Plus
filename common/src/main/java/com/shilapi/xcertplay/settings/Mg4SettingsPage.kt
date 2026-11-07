@@ -350,6 +350,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
             "cluster_map" -> add(R.string.mg4_cluster_map_description)
             "cluster_lanes" -> add(R.string.mg4_cluster_lanes_description)
             "cluster_song" -> add(R.string.mg4_cluster_song_description)
+            "carplay_wheel" -> add(R.string.mg4_carplay_wheel_description)
             "location" -> add(R.string.sends_precise_android_location_as_carplay_gps_data_when_th)
             "parked" -> add(R.string.settings_footer_video_while_parked)
             "appearance" -> add(R.string.mg4_sunset_dark_mode_description)
@@ -402,6 +403,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.CLUSTER_LANES -> R.string.mg4_cluster_lanes
         SettingRow.CLUSTER_SONG -> R.string.mg4_cluster_song
         SettingRow.CLUSTER_ALBUM_ART -> R.string.mg4_cluster_album_art
+        SettingRow.CARPLAY_WHEEL -> R.string.mg4_carplay_wheel
         SettingRow.SEND_LOCATION -> R.string.settings_send_location
         SettingRow.VIDEO_WHILE_PARKED -> R.string.mg4_video_while_parked
         SettingRow.SUNSET_DARK_MODE -> R.string.mg4_sunset_dark_mode
@@ -505,6 +507,10 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                 }
                 SettingRow.CLUSTER_SONG -> switch(AirPlayPersistence.loadClusterSong(activity)) { AirPlayPersistence.saveClusterSong(activity, it) }
                 SettingRow.CLUSTER_ALBUM_ART -> switch(AirPlayPersistence.loadClusterAlbumArt(activity)) { AirPlayPersistence.saveClusterAlbumArt(activity, it) }
+                SettingRow.CARPLAY_WHEEL -> switch(AirPlayPersistence.loadCarPlayWheel(activity)) {
+                    AirPlayPersistence.saveCarPlayWheel(activity, it)
+                    com.shilapi.xcertplay.CarPlayWheel.setServiceEnabled(activity, it)
+                }
                 SettingRow.CLUSTER_MAP -> {
                     val choices = listOf(null) + CarPlayClusterDisplay.Content.entries
                     segmented(

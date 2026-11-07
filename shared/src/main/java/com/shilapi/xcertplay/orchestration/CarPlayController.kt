@@ -516,6 +516,18 @@ class CarPlayController(
         }
     }
 
+    /** One knob move or press, released straight after (the steering-wheel joystick in CarPlay mode). */
+    fun sendKnob(state: com.shilapi.xcertplay.airplay.AirPlayKnobState): Boolean {
+        if (closed) return false
+        val session = activeSession ?: return false
+        return try {
+            touchExecutor.execute { session.sendKnob(state) }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     override fun close() {
         synchronized(this) {
             if (closed) return

@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.7 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Steering-wheel joystick for CarPlay (experimental).** Settings > Experimental. Hold the centre of the right-hand joystick while CarPlay is on screen to switch CarPlay control on: up, down, left and right nudge CarPlay's highlight (the knob MG4CPlay already declares) and the centre selects; hold it again, or leave CarPlay, to give the joystick back to volume and tracks. The car sends wheel keys as broadcasts no app can stop, so an accessibility service filters the joystick first (297-301 only), the way MG4Control's advanced shortcuts do; out of CarPlay control, a short centre press is held for 500 ms and replayed to the car unchanged. The switch adds or removes only MG4CPlay's service in Android's accessibility list. Logged as `Wheel:` lines.
+
 mg4.96-swi68.6 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Lanes drawn by MG4CPlay (experimental).** Lane guidance on the dashboard is now Off, Car icons or Drawn by MG4CPlay. The cluster's own lane icons know five directions and seven combined lanes, so slight and sharp turns and other combinations get flattened. Drawn by MG4CPlay draws every arrow at the iPhone's angle (the way to go white, other usable arrows grey, unusable lanes dim) in a transparent band over the navigation card's lane row (144-184 px of the square, read from the SWI68 `fragment_navi` layout), and sends the car an empty lane list. Hidden on other pages and under the dashboard map. Logged as `Cluster lanes:` lines.

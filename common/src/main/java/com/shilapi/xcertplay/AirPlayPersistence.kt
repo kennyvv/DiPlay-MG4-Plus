@@ -48,6 +48,7 @@ object AirPlayPersistence {
     private const val KEY_CLUSTER_SONG = "mg4_cluster_song"
     private const val KEY_CLUSTER_ALBUM_ART = "mg4_cluster_album_art"
     private const val KEY_CLUSTER_LANES = "mg4_cluster_lanes"
+    private const val KEY_CARPLAY_WHEEL = "mg4_carplay_wheel"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -238,6 +239,16 @@ object AirPlayPersistence {
     fun saveClusterAlbumArt(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_CLUSTER_ALBUM_ART, enabled)
+            .apply()
+    }
+
+    /** Experimental steering-wheel joystick for CarPlay ([CarPlayWheelService]), off by default. */
+    fun loadCarPlayWheel(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CARPLAY_WHEEL, false)
+
+    fun saveCarPlayWheel(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_CARPLAY_WHEEL, enabled)
             .apply()
     }
 
