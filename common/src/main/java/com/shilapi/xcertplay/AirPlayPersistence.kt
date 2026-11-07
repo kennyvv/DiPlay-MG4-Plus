@@ -45,6 +45,7 @@ object AirPlayPersistence {
     private const val KEY_VIDEO_COLOUR_RANGE = "video_colour_range"
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
     private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
+    private const val KEY_CLUSTER_SONG = "mg4_cluster_song"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -201,6 +202,16 @@ object AirPlayPersistence {
     fun saveClusterMap(context: Context, content: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Content?) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_CLUSTER_MAP, content?.name)
+            .apply()
+    }
+
+    /** Experimental CarPlay song card in the cluster square, off by default. */
+    fun loadClusterSong(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_SONG, false)
+
+    fun saveClusterSong(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_CLUSTER_SONG, enabled)
             .apply()
     }
 

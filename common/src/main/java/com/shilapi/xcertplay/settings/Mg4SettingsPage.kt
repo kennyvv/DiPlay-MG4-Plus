@@ -345,6 +345,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
             "navigation" -> add(R.string.contrib_audio_home_nav_channel_note)
             "cluster" -> add(R.string.mg4_cluster_directions_description)
             "cluster_map" -> add(R.string.mg4_cluster_map_description)
+            "cluster_song" -> add(R.string.mg4_cluster_song_description)
             "location" -> add(R.string.sends_precise_android_location_as_carplay_gps_data_when_th)
             "parked" -> add(R.string.settings_footer_video_while_parked)
             "appearance" -> add(R.string.mg4_sunset_dark_mode_description)
@@ -394,6 +395,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
         SettingRow.CLUSTER_MAP -> R.string.mg4_cluster_map
+        SettingRow.CLUSTER_SONG -> R.string.mg4_cluster_song
         SettingRow.SEND_LOCATION -> R.string.settings_send_location
         SettingRow.VIDEO_WHILE_PARKED -> R.string.mg4_video_while_parked
         SettingRow.SUNSET_DARK_MODE -> R.string.mg4_sunset_dark_mode
@@ -488,6 +490,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     host.editNavigationChannel { changed(row, AirPlayPersistence.loadNavigationAudioChannel(activity).toString()); host.render() }
                 }
                 SettingRow.CLUSTER_DIRECTIONS -> switch(AirPlayPersistence.loadClusterDirections(activity)) { AirPlayPersistence.saveClusterDirections(activity, it) }
+                SettingRow.CLUSTER_SONG -> switch(AirPlayPersistence.loadClusterSong(activity)) { AirPlayPersistence.saveClusterSong(activity, it) }
                 SettingRow.CLUSTER_MAP -> {
                     val choices = listOf(null) + CarPlayClusterDisplay.Content.entries
                     segmented(

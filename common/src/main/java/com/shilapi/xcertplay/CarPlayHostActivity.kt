@@ -2765,6 +2765,16 @@ class CarPlayHostActivity : ComponentActivity() {
         )
     }
 
+    /** The experimental cluster song card follows [target]'s songs, on the eh32 cluster (SWI68, SWI165) only. */
+    private fun attachClusterSong(target: CarPlayController) {
+        val enabled = AirPlayPersistence.loadClusterSong(this) &&
+            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
+        target.songListener = if (enabled) { song -> runOnUiThread { Mg4ClusterSong.update(song) } } else null
+        runOnUiThread {
+            if (enabled) Mg4ClusterSong.attach(this, target.currentSong(), ::appendLog) else Mg4ClusterSong.detach()
+        }
+    }
+
     /** The experimental cluster map, on the eh32 cluster (SWI68, SWI165) only. */
     private fun clusterMapContent(): CarPlayClusterDisplay.Content? =
         AirPlayPersistence.loadClusterMap(this)
@@ -3081,6 +3091,7 @@ class CarPlayHostActivity : ComponentActivity() {
             onScreenStreamStateChanged(restartGeneration, type, active)
         }
         if (Mg4ClusterMap.isShown) Mg4ClusterMap.attach(this, snapshot.sink, ::appendLog)
+        attachClusterSong(snapshot.controller)
         currentSurface?.let(::attachSurface)
         val serviceReused = snapshot.controller.hasActiveAirPlayAttachment()
         appendLog(
@@ -3196,6 +3207,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 AirPlayPersistence.loadClusterDirections(this),
         )
         controller = next
+        attachClusterSong(next)
         armStartupWatchdog()
         CarPlayMediaKeys.attach(
             this,
@@ -3561,7 +3573,11 @@ class CarPlayHostActivity : ComponentActivity() {
         val oldSink = sink
         CarPlayMediaKeys.detach(oldController)
         CarPlayBackgroundSession.clear(oldController)
-        runOnUiThread { Mg4ClusterMap.detach() }
+        oldController?.songListener = null
+        runOnUiThread {
+            Mg4ClusterMap.detach()
+            Mg4ClusterSong.detach()
+        }
         controller = null
         sink = null
         Log.i(TAG, "shutdown reason=$reason terminateProcess=$terminateProcess")

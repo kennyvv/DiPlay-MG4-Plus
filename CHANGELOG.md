@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.4 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Song on the dashboard (experimental).** New in Settings > Car, off by default. Shows the CarPlay song (title, artist, album, a paused mark) in the cluster's centre square on its Music page, drawn by MG4CPlay from the iPhone's now-playing updates (song parser ported from upstream DiPlay). The car's own song card can't be used: read from the SWI68 firmware, every way into it is bound to a stock app by package name (the AllGo media browser, fed only by AllGo's CarPlay service; the Amazon online music app; the Bluetooth stack). The map and the song card share one cluster-square window helper (`Mg4ClusterSquare`); when the cluster page can't be read, the square goes to the map. Logged as `Cluster song:` lines.
+
 mg4.96-swi68.3 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Lane guidance on the dashboard.** With Directions on the dashboard on, CarPlay's lane arrows (iAP2 0x5204) now show on the cluster's navigation card: grey lanes and the lanes to take lit, including combined arrows such as straight-and-right. The car asks the iPhone for lanes the way upstream DiPlay does (MaxLaneGuidanceDescriptionLength and MaxLaneGuidanceStorageCapacity), the lane parser is ported from upstream, and the lanes go to the car's `IMapService.vehicleLaneInfoChanged` (48) as the cluster app's lane codes, read from the SWI68 `clusterprojection` app. Logged as `Cluster nav: lanes` lines with the raw lanes from the iPhone.

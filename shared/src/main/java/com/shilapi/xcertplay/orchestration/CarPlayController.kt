@@ -212,9 +212,16 @@ class CarPlayController(
     @Volatile private var csm: Iap2Session? = null
     @Volatile private var activeSession: AirPlaySession? = null
     private val playbackStatus = com.shilapi.xcertplay.media.CarPlayPlaybackStatus()
+    private val songState = com.shilapi.xcertplay.media.CarPlaySongState()
 
     /** Told when the iPhone starts or stops playing media; may run on any thread. */
     @Volatile var playbackListener: ((Boolean) -> Unit)? = null
+
+    /** Told when the song (or its play state) changes, null when none is known; may run on any thread. */
+    @Volatile var songListener: ((com.shilapi.xcertplay.media.CarPlaySong?) -> Unit)? = null
+
+    /** The song known so far, for a listener that attaches mid-session. */
+    fun currentSong(): com.shilapi.xcertplay.media.CarPlaySong? = synchronized(songState) { songState.current() }
 
     /** Video in car; set before [start] to offer it to the iPhone (with AirPlayConfig.videoInCar). */
     @Volatile var videoListener: CarPlayVideoListener? = null
@@ -294,6 +301,8 @@ class CarPlayController(
                 if (clusterDirections) com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.stop(appContext)
                 videoListener?.onVideoSessionEnded()
                 synchronized(playbackStatus) { playbackStatus.clear() }?.let { playing -> playbackListener?.invoke(playing) }
+                val hadSong = synchronized(songState) { (songState.current() != null).also { songState.clear() } }
+                if (hadSong) songListener?.invoke(null)
             }
             debugLog("AirPlay session ended peer=${session.host}")
             uiListener?.onSessionEnded(session)
@@ -564,10 +573,16 @@ class CarPlayController(
         }
     }
 
-    // Route guidance goes to the MG4 cluster; playback status to the host.
+    // Route guidance goes to the MG4 cluster; playback status and the song to the host.
     private fun onRouteFrame(frame: com.shilapi.xcertplay.iap2.wire.Iap2Frame) {
         if (clusterDirections) com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.onFrame(frame)
         synchronized(playbackStatus) { playbackStatus.accept(frame) }?.let { playing -> playbackListener?.invoke(playing) }
+        val (changed, song) = synchronized(songState) {
+            val before = songState.current()
+            songState.accept(frame)
+            (songState.current() != before) to songState.current()
+        }
+        if (changed) songListener?.invoke(song)
     }
 
     private fun startMfi() {

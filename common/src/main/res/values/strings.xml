@@ -209,6 +209,8 @@
     <string name="mg4_cluster_map_map">Map</string>
     <string name="mg4_cluster_map_turn_card">Next turn</string>
     <string name="mg4_cluster_map_description">Asks the iPhone for CarPlay’s instrument-cluster screen and shows it in the square in the middle of the cluster, on its Navigation page. Map shows Apple Maps with the next turn on it; Next turn shows only the turn card. The car’s own navigation card and anything else in that square (such as MG4Control’s module) is covered while it shows. Experimental: not yet tried in a car. Applies next time CarPlay connects.</string>
+    <string name="mg4_cluster_song">Song on the dashboard (experimental)</string>
+    <string name="mg4_cluster_song_description">Shows the CarPlay song (title, artist and album) in the square in the middle of the cluster, on its Music page. The car’s own song card can’t show CarPlay from MG4CPlay, so this draws its own and covers the car’s card and anything else in that square (such as MG4Control’s module) while a song is known. Experimental: not yet tried in a car. Applies next time CarPlay connects.</string>
     <string name="calls_over_carplay_only">Calls over CarPlay only</string>
     <string name="calls_over_carplay_only_description">With CarPlay audio over Wi-Fi, also disconnects the car’s hands-free Bluetooth while CarPlay runs, so the iPhone keeps calls on CarPlay. The car’s own phone screen and call button don’t work during that time. Hands-free reconnects when CarPlay closes. On by default on MG4. Applies next time CarPlay connects.</string>
     <string name="video_colour_range">Colour range (test)</string>

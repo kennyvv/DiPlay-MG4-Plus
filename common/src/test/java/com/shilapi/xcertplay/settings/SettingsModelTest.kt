@@ -27,6 +27,12 @@ class SettingsModelTest {
         assertTrue(SettingRow.CLUSTER_MAP.appliesOnReconnect)
     }
 
+    @Test fun dashboardSongOnlyOnTheEh32Cluster() {
+        assertTrue(SettingRow.CLUSTER_SONG in rows(SettingsCategory.CAR, env(Generation.SWI165)))
+        assertFalse(SettingRow.CLUSTER_SONG in rows(SettingsCategory.CAR, env(Generation.SWI69)))
+        assertTrue(SettingRow.CLUSTER_SONG.appliesOnReconnect)
+    }
+
     @Test fun sendLocationLivesUnderCar() {
         assertTrue(SettingRow.SEND_LOCATION in rows(SettingsCategory.CAR, env()))
         SettingsCategory.entries.filter { it != SettingsCategory.CAR }.forEach {
