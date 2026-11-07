@@ -60,7 +60,7 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
 
     CLUSTER_DIRECTIONS(RowKind.SWITCH, true),
     CLUSTER_MAP(RowKind.SEGMENTED, true),
-    CLUSTER_LANES(RowKind.SWITCH, true),
+    CLUSTER_LANES(RowKind.SEGMENTED, true),
     CLUSTER_SONG(RowKind.SWITCH, true),
     CLUSTER_ALBUM_ART(RowKind.SWITCH, true),
     // Turning location on asks for permission and reconnects by itself, as before.

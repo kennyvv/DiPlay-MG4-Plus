@@ -23,7 +23,7 @@ import com.shilapi.xcertplay.vehicle.VehicleIntegration
  * square shows on the cluster, and that the square sits centred in what the margins leave on the
  * 800x480 display, not at the margins themselves.
  *
- * Each window follows the cluster page ([VehicleIntegration.clusterTab], read once a second) and
+ * A window covers the square or a [Band] of it. Each window follows the cluster page ([VehicleIntegration.clusterTab], read once a second) and
  * moves off the display when its page is not showing, so a decoder surface inside it survives.
  */
 internal class Mg4ClusterSquare private constructor(
@@ -36,6 +36,9 @@ internal class Mg4ClusterSquare private constructor(
     private val log: (String) -> Unit,
 ) {
     data class Placement(val x: Int, val y: Int, val side: Int)
+
+    /** A band of the square, [top] and [height] in px from the square's top; null height is the whole square. */
+    data class Band(val top: Int = 0, val height: Int? = null)
 
     private val main = Handler(Looper.getMainLooper())
     private var poller: Handler? = null
@@ -109,6 +112,8 @@ internal class Mg4ClusterSquare private constructor(
             title: String,
             visibleOn: (Int?) -> Boolean,
             log: (String) -> Unit,
+            band: Band = Band(),
+            translucent: Boolean = false,
             content: (Context) -> View,
         ): Mg4ClusterSquare? {
             val app = context.applicationContext
@@ -128,18 +133,18 @@ internal class Mg4ClusterSquare private constructor(
             @Suppress("DEPRECATION")
             val params = WindowManager.LayoutParams(
                 place.side,
-                place.side,
+                (band.height ?: place.side).coerceIn(1, place.side),
                 WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.OPAQUE,
+                if (translucent) PixelFormat.TRANSLUCENT else PixelFormat.OPAQUE,
             ).apply {
                 gravity = Gravity.TOP or Gravity.START
                 // Hidden until the first page read decides.
                 x = size.x + place.side
-                y = place.y
+                y = place.y + band.top.coerceIn(0, place.side - 1)
                 this.title = title
             }
             try {

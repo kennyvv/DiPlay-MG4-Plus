@@ -54,6 +54,12 @@ object Mg4ClusterNavigation {
     private var lastLanes = ""
     private var report: (String) -> Unit = {}
 
+    /**
+     * Set while MG4CPlay draws the lanes itself: lanes (empty when none) and Apple's driving side go
+     * here, on the cluster thread, and the car's own lane icons are cleared.
+     */
+    @Volatile var laneListener: ((List<LaneGuidanceLane>, Int) -> Unit)? = null
+
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             binder = service
@@ -168,9 +174,11 @@ object Mg4ClusterNavigation {
 
     /** Lanes go to the cluster only while it guides; an empty strip clears them. */
     private fun publishLanes() {
-        val service = binder?.takeIf { it.isBinderAlive } ?: return
         val drivingSide = route.current()?.drivingSide ?: 0
-        val encoded = if (guiding) Mg4ClusterLanes.encode(lanes, drivingSide) else ""
+        val drawn = laneListener
+        drawn?.invoke(if (guiding) lanes else emptyList(), drivingSide)
+        val service = binder?.takeIf { it.isBinderAlive } ?: return
+        val encoded = if (guiding && drawn == null) Mg4ClusterLanes.encode(lanes, drivingSide) else ""
         if (encoded == lastLanes) return
         val ok = call(service, TX_VEHICLE_LANE_INFO) { writeString(encoded) }
         val detail = lanes.joinToString(";") { "${it.index}:${it.status}:${it.angles}:${it.highlightAngle}" }

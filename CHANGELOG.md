@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.6 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Lanes drawn by MG4CPlay (experimental).** Lane guidance on the dashboard is now Off, Car icons or Drawn by MG4CPlay. The cluster's own lane icons know five directions and seven combined lanes, so slight and sharp turns and other combinations get flattened. Drawn by MG4CPlay draws every arrow at the iPhone's angle (the way to go white, other usable arrows grey, unusable lanes dim) in a transparent band over the navigation card's lane row (144-184 px of the square, read from the SWI68 `fragment_navi` layout), and sends the car an empty lane list. Hidden on other pages and under the dashboard map. Logged as `Cluster lanes:` lines.
+
 mg4.96-swi68.5 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Settings > Experimental.** A new category for features not yet tried in a car, each off by default, in the order they were added: Map on the dashboard, Lane guidance on the dashboard, Song on the dashboard, Album art on the song card. Map and song moved here from Car. Fixes (SWI68 detection, no Bluetooth settings while hands-free is up) stay always on.

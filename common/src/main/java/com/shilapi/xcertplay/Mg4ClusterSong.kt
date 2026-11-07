@@ -81,7 +81,7 @@ internal object Mg4ClusterSong {
                 "MG4CPlay cluster song",
                 { tab -> visibleOn(tab, song != null, Mg4ClusterMap.isShown) },
                 { this.log("Cluster song: $it") },
-                ::card,
+                content = ::card,
             )
         }
         update(current)

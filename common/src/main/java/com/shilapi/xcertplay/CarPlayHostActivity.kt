@@ -2780,9 +2780,21 @@ class CarPlayHostActivity : ComponentActivity() {
     }
 
     /** Lane guidance from the iPhone, only for the dashboard directions that draw it. */
-    private fun laneGuidanceEnabled(): Boolean =
-        AirPlayPersistence.loadClusterDirections(this) && AirPlayPersistence.loadClusterLanes(this) &&
-            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
+    private fun laneGuidanceEnabled(): Boolean = laneGuidanceMode() != AirPlayPersistence.LaneGuidance.OFF
+
+    private fun laneGuidanceMode(): AirPlayPersistence.LaneGuidance =
+        AirPlayPersistence.loadClusterLanes(this).takeIf {
+            AirPlayPersistence.loadClusterDirections(this) &&
+                Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
+        } ?: AirPlayPersistence.LaneGuidance.OFF
+
+    /** With lanes drawn by MG4CPlay, the cluster navigation hands them to [Mg4ClusterLaneStrip]. */
+    private fun attachClusterLanes() {
+        val drawn = laneGuidanceMode() == AirPlayPersistence.LaneGuidance.DRAWN
+        com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.laneListener =
+            if (drawn) { lanes, side -> runOnUiThread { Mg4ClusterLaneStrip.update(lanes, side) } } else null
+        runOnUiThread { if (drawn) Mg4ClusterLaneStrip.attach(this, ::appendLog) else Mg4ClusterLaneStrip.detach() }
+    }
 
     /** Album art over iAP2 file transfers, only for the cluster song card it feeds. */
     private fun albumArtEnabled(): Boolean =
@@ -3106,6 +3118,7 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         if (Mg4ClusterMap.isShown) Mg4ClusterMap.attach(this, snapshot.sink, ::appendLog)
         attachClusterSong(snapshot.controller)
+        attachClusterLanes()
         currentSurface?.let(::attachSurface)
         val serviceReused = snapshot.controller.hasActiveAirPlayAttachment()
         appendLog(
@@ -3223,6 +3236,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         controller = next
         attachClusterSong(next)
+        attachClusterLanes()
         armStartupWatchdog()
         CarPlayMediaKeys.attach(
             this,
@@ -3590,9 +3604,11 @@ class CarPlayHostActivity : ComponentActivity() {
         CarPlayBackgroundSession.clear(oldController)
         oldController?.songListener = null
         oldController?.artworkListener = null
+        com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.laneListener = null
         runOnUiThread {
             Mg4ClusterMap.detach()
             Mg4ClusterSong.detach()
+            Mg4ClusterLaneStrip.detach()
         }
         controller = null
         sink = null

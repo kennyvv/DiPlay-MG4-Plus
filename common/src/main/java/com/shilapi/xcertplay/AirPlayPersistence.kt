@@ -217,13 +217,17 @@ object AirPlayPersistence {
             .apply()
     }
 
-    /** Experimental CarPlay lane guidance on the cluster's navigation card, off by default. */
-    fun loadClusterLanes(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_LANES, false)
+    /** How CarPlay lane guidance reaches the cluster's navigation card; off by default. */
+    enum class LaneGuidance { OFF, CAR_ICONS, DRAWN }
 
-    fun saveClusterLanes(context: Context, enabled: Boolean) {
+    fun loadClusterLanes(context: Context): LaneGuidance {
+        val name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLUSTER_LANES, null)
+        return LaneGuidance.entries.firstOrNull { it.name == name } ?: LaneGuidance.OFF
+    }
+
+    fun saveClusterLanes(context: Context, mode: LaneGuidance) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putBoolean(KEY_CLUSTER_LANES, enabled)
+            .putString(KEY_CLUSTER_LANES, mode.name)
             .apply()
     }
 

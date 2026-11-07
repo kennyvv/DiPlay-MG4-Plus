@@ -496,7 +496,13 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     host.editNavigationChannel { changed(row, AirPlayPersistence.loadNavigationAudioChannel(activity).toString()); host.render() }
                 }
                 SettingRow.CLUSTER_DIRECTIONS -> switch(AirPlayPersistence.loadClusterDirections(activity)) { AirPlayPersistence.saveClusterDirections(activity, it) }
-                SettingRow.CLUSTER_LANES -> switch(AirPlayPersistence.loadClusterLanes(activity)) { AirPlayPersistence.saveClusterLanes(activity, it) }
+                SettingRow.CLUSTER_LANES -> {
+                    val modes = AirPlayPersistence.LaneGuidance.entries
+                    segmented(
+                        listOf(R.string.mg4_cluster_map_off, R.string.mg4_cluster_lanes_car, R.string.mg4_cluster_lanes_drawn).map(activity::getString),
+                        modes.indexOf(AirPlayPersistence.loadClusterLanes(activity)),
+                    ) { AirPlayPersistence.saveClusterLanes(activity, modes[it]) }
+                }
                 SettingRow.CLUSTER_SONG -> switch(AirPlayPersistence.loadClusterSong(activity)) { AirPlayPersistence.saveClusterSong(activity, it) }
                 SettingRow.CLUSTER_ALBUM_ART -> switch(AirPlayPersistence.loadClusterAlbumArt(activity)) { AirPlayPersistence.saveClusterAlbumArt(activity, it) }
                 SettingRow.CLUSTER_MAP -> {
