@@ -824,6 +824,17 @@ object EVHardware {
 
     private const val PROP_SWC_FUNCTION = 0x21407b14
 
+    /**
+     * The page the instrument cluster shows (IPK_CLUSTER_TAB_BTN_STS 0x21407b18, as the SWI68 and
+     * SWI165 cluster app `clusterprojection` reads it: 0 trip computer, 1 navigation, 2 media,
+     * 3 call, 4 warnings, 5 settings, 6 active safety). null when the car does not answer.
+     */
+    fun clusterTab(): Int? =
+        getIntPropertyCPM(PROP_CLUSTER_TAB, AREA_GLOBAL).takeIf { it >= 0 }
+            ?: getIntPropertyCPM(PROP_CLUSTER_TAB, 0).takeIf { it >= 0 }
+
+    private const val PROP_CLUSTER_TAB = 0x21407b18
+
     /** The whole configuration bytes last read, for the log. */
     @Volatile var lastVehicleConfigBytes: String? = null
 

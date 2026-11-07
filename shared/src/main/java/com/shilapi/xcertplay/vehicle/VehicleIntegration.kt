@@ -39,4 +39,7 @@ object VehicleIntegration {
     }
 
     fun parked(context: Context): Boolean? = if (isMg4(context)) Mg4Vehicle.parked(context) else null
+
+    /** The page the instrument cluster shows (1 navigation, 2 media), or null when unreadable. */
+    fun clusterTab(): Int? = runCatching { com.evsuite.hardware.EVHardware.clusterTab() }.getOrNull()
 }

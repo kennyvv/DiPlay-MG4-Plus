@@ -38,3 +38,14 @@ CarPlay).
   with.
 - DiAuto-MG4 warns that SWI68 R46 lets only one app at a time hold a Bluetooth connection, fixed
   by R63. R59 sits in between; wireless CarPlay starting on this car shows the bootstrap works.
+
+## Cluster square (dashboard map)
+
+From the same firmware: SystemUI starts `com.saicmotor.hmi.clusterprojection/.ProjectionActivity`
+on display 1 (`ActivityOptions.setLaunchDisplayId(1)`). Its `activity_projection` layout is a 260 px
+square with margins of 424 px (start) and 32 px (top) on `#0c0c0c`. The cluster page comes from the
+vendor property `IPK_CLUSTER_TAB_BTN_STS` 0x21407b18 (557873944), read as a global property: 0 trip
+computer, 1 navigation, 2 media, 3 call, 4 warnings, 5 settings, 6 active safety. The stock AllGo
+CarPlay app does not use CarPlay's cluster stream; it only reads 0x21407b14 (wheel key mode).
+`Mg4ClusterMap` places its window where MG4Control found the square on the car: centred in what the
+margins leave, (482, 126) on 800x480.

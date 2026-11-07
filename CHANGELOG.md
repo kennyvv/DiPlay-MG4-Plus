@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.2 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Map on the dashboard (experimental).** New in Settings > Car, off by default: Off, Map or Next turn. CarPlay is asked for its instrument-cluster screen (the alternate screen, stream 111, which upstream DiPlay drew on BYD clusters before the BYD code was removed) and it is shown in the square in the middle of the cluster. The cluster shows that square from the head unit's second Android display (display 1, 800x480), where the car's `clusterprojection` app draws a 260 px square; MG4Control found that a window over it shows on the cluster. The map covers the square only on the cluster's Navigation page and moves aside on the others, so the Music page keeps the car's song card. Logged as `Cluster map:` lines. Unknowns: whether the head unit decodes two CarPlay video streams at once, and how Apple Maps lays out such a small square.
+
 mg4.96-swi68.1 (test build for SWI68). Not yet tried in the car.
 
 - **SWI68 is treated like SWI165.** The SWI68-29958-1300R59 firmware is the same eh32 platform as SWI165: same launcher, media service, nFore Bluetooth, wheel-key broadcast, cluster MapService and AllGo CarPlay app. SWI68 was unknown firmware before, so it got none of the SWI165 fixes and fell back to Bluetooth Music, which sent the driver to Bluetooth settings ("connect to Bluetooth for audio") each time CarPlay opened. It now gets Wi-Fi audio, the overlay video renderer, square corners, wheel keys and the other SWI165 defaults. Every SWI165 interface DiPlay calls was checked against the SWI68 apps and matches; see [docs/MG4_SWI68.md](docs/MG4_SWI68.md).

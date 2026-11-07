@@ -59,6 +59,7 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     NAVIGATION_CHANNEL(RowKind.LINK, true),
 
     CLUSTER_DIRECTIONS(RowKind.SWITCH, true),
+    CLUSTER_MAP(RowKind.SEGMENTED, true),
     // Turning location on asks for permission and reconnects by itself, as before.
     SEND_LOCATION(RowKind.SWITCH),
     VIDEO_WHILE_PARKED(RowKind.SWITCH, true),
@@ -127,6 +128,8 @@ internal object SettingsLayout {
         )
         SettingsCategory.CAR -> listOfNotNull(
             SettingsGroup("cluster", listOf(SettingRow.CLUSTER_DIRECTIONS))
+                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
+            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
             SettingsGroup("location", listOf(SettingRow.SEND_LOCATION)),
             SettingsGroup("parked", listOf(SettingRow.VIDEO_WHILE_PARKED)),

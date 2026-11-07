@@ -14,6 +14,7 @@ import com.shilapi.xcertplay.AirPlayPersistence
 import com.shilapi.xcertplay.AppLocale
 import com.shilapi.xcertplay.DiPlayPreferences
 import com.shilapi.xcertplay.Mg4FirmwareProfile
+import com.shilapi.xcertplay.airplay.CarPlayClusterDisplay
 import com.shilapi.xcertplay.airplay.CarPlaySize
 import com.shilapi.xcertplay.host.R
 import com.shilapi.xcertplay.localizedLabel
@@ -343,6 +344,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
             "buffer" -> add(R.string.settings_footer_buffer)
             "navigation" -> add(R.string.contrib_audio_home_nav_channel_note)
             "cluster" -> add(R.string.mg4_cluster_directions_description)
+            "cluster_map" -> add(R.string.mg4_cluster_map_description)
             "location" -> add(R.string.sends_precise_android_location_as_carplay_gps_data_when_th)
             "parked" -> add(R.string.settings_footer_video_while_parked)
             "appearance" -> add(R.string.mg4_sunset_dark_mode_description)
@@ -391,6 +393,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.MICROPHONE -> R.string.microphone_source
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
+        SettingRow.CLUSTER_MAP -> R.string.mg4_cluster_map
         SettingRow.SEND_LOCATION -> R.string.settings_send_location
         SettingRow.VIDEO_WHILE_PARKED -> R.string.mg4_video_while_parked
         SettingRow.SUNSET_DARK_MODE -> R.string.mg4_sunset_dark_mode
@@ -485,6 +488,13 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     host.editNavigationChannel { changed(row, AirPlayPersistence.loadNavigationAudioChannel(activity).toString()); host.render() }
                 }
                 SettingRow.CLUSTER_DIRECTIONS -> switch(AirPlayPersistence.loadClusterDirections(activity)) { AirPlayPersistence.saveClusterDirections(activity, it) }
+                SettingRow.CLUSTER_MAP -> {
+                    val choices = listOf(null) + CarPlayClusterDisplay.Content.entries
+                    segmented(
+                        listOf(R.string.mg4_cluster_map_off, R.string.mg4_cluster_map_map, R.string.mg4_cluster_map_turn_card).map(activity::getString),
+                        choices.indexOf(AirPlayPersistence.loadClusterMap(activity)).coerceAtLeast(0),
+                    ) { AirPlayPersistence.saveClusterMap(activity, choices[it]) }
+                }
                 SettingRow.SEND_LOCATION -> switch(AirPlayPersistence.loadLocationReportingEnabled(activity)) { host.setLocationReporting(it) }
                 SettingRow.VIDEO_WHILE_PARKED -> switch(VehicleSettings.videoWhileParked(activity)) { VehicleSettings.setVideoWhileParked(activity, it) }
                 SettingRow.SUNSET_DARK_MODE -> switch(AirPlayPersistence.loadSunsetDarkMode(activity)) { AirPlayPersistence.saveSunsetDarkMode(activity, it) }

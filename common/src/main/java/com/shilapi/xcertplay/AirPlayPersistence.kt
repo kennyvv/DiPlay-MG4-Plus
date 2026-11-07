@@ -44,6 +44,7 @@ object AirPlayPersistence {
     private const val KEY_MIC_SOURCE = "microphone_source"
     private const val KEY_VIDEO_COLOUR_RANGE = "video_colour_range"
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
+    private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -188,6 +189,18 @@ object AirPlayPersistence {
     fun saveWifiHighPerformanceEnabled(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_WIFI_HIGH_PERFORMANCE_ENABLED, enabled)
+            .apply()
+    }
+
+    /** Experimental CarPlay map in the cluster square, or null when off (the default). */
+    fun loadClusterMap(context: Context): com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Content? {
+        val name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLUSTER_MAP, null)
+        return com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Content.entries.firstOrNull { it.name == name }
+    }
+
+    fun saveClusterMap(context: Context, content: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Content?) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_CLUSTER_MAP, content?.name)
             .apply()
     }
 

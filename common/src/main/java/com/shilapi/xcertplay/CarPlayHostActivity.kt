@@ -56,6 +56,7 @@ import com.shilapi.xcertplay.airplay.AirPlayConfig
 import com.shilapi.xcertplay.airplay.AirPlayDisplaySettings
 import com.shilapi.xcertplay.airplay.AirPlayPhysicalSizeBasis
 import com.shilapi.xcertplay.airplay.AirPlayPhysicalSizeMm
+import com.shilapi.xcertplay.airplay.CarPlayClusterDisplay
 import com.shilapi.xcertplay.airplay.CarPlayDisplayScale
 import com.shilapi.xcertplay.airplay.CarPlayUiScale
 import com.shilapi.xcertplay.airplay.AirPlayDisplayConfig
@@ -2756,8 +2757,18 @@ class CarPlayHostActivity : ComponentActivity() {
             // the iPhone would hand media over to CarPlay, we would discard it, and the
             // Bluetooth music would cut out and never resume. Wi-Fi audio advertises audio.
             disableAudioOutput = sessionAudioMode == AudioMode.HYBRID_BLUETOOTH,
+            cluster = clusterMapContent()?.let { content ->
+                CarPlayClusterDisplay.config(content).also {
+                    appendLog("Cluster map: requesting ${it.widthPixels}x${it.heightPixels} url=${it.initialUrl}")
+                }
+            },
         )
     }
+
+    /** The experimental cluster map, on the eh32 cluster (SWI68, SWI165) only. */
+    private fun clusterMapContent(): CarPlayClusterDisplay.Content? =
+        AirPlayPersistence.loadClusterMap(this)
+            ?.takeIf { Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165 }
 
     /** Head-unit audio state at session start: a muted or zero-volume stream explains silence. */
     private fun audioEnvironmentSummary(): String = runCatching {
@@ -3069,6 +3080,7 @@ class CarPlayHostActivity : ComponentActivity() {
         snapshot.sink.setScreenStreamActiveChangedListener { type, active ->
             onScreenStreamStateChanged(restartGeneration, type, active)
         }
+        if (Mg4ClusterMap.isShown) Mg4ClusterMap.attach(this, snapshot.sink, ::appendLog)
         currentSurface?.let(::attachSurface)
         val serviceReused = snapshot.controller.hasActiveAirPlayAttachment()
         appendLog(
@@ -3143,6 +3155,9 @@ class CarPlayHostActivity : ComponentActivity() {
             controllerGeneration = controllerGeneration,
         )
         sink = renderer
+        runOnUiThread {
+            if (airPlayConfig.cluster != null) Mg4ClusterMap.attach(this, renderer, ::appendLog) else Mg4ClusterMap.detach()
+        }
         currentSurface?.let(::attachSurface)
         val media = createMediaEngine(renderer)
         val pairings = AirPlayPersistence.loadPairings(this) { id, key ->
@@ -3546,6 +3561,7 @@ class CarPlayHostActivity : ComponentActivity() {
         val oldSink = sink
         CarPlayMediaKeys.detach(oldController)
         CarPlayBackgroundSession.clear(oldController)
+        runOnUiThread { Mg4ClusterMap.detach() }
         controller = null
         sink = null
         Log.i(TAG, "shutdown reason=$reason terminateProcess=$terminateProcess")
@@ -3567,7 +3583,8 @@ class CarPlayHostActivity : ComponentActivity() {
 
     private fun attachSurface(surface: Surface) {
         sink?.setSurface(SCREEN_TYPE_MAIN, surface)
-        sink?.setSurface(SCREEN_TYPE_ALT, surface)
+        // The cluster map owns the alternate screen while it is shown.
+        if (!Mg4ClusterMap.isShown) sink?.setSurface(SCREEN_TYPE_ALT, surface)
     }
 
     private fun onHostTouch(view: View, event: MotionEvent): Boolean {
@@ -3652,6 +3669,7 @@ class CarPlayHostActivity : ComponentActivity() {
             } else {
                 activeScreenStreamTypes.remove(type)
             }
+            if (type == SCREEN_TYPE_ALT) appendLog("Cluster map: stream active=$active")
             updateDebugOverlays()
         }
     }
