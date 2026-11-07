@@ -7,7 +7,7 @@ import com.shilapi.xcertplay.Mg4FirmwareProfile
  * Which settings the MG4 Settings screen shows, and where. Plain Kotlin, so the layout for each
  * firmware can be unit-tested. [Mg4SettingsPage] turns it into views and reads and saves values.
  */
-internal enum class SettingsCategory { CONNECTION, DISPLAY, SOUND, CAR, APPS, GENERAL, HELP, ABOUT }
+internal enum class SettingsCategory { CONNECTION, DISPLAY, SOUND, CAR, APPS, EXPERIMENTAL, GENERAL, HELP, ABOUT }
 
 internal enum class RowKind {
     /** On/off switch. */
@@ -60,7 +60,9 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
 
     CLUSTER_DIRECTIONS(RowKind.SWITCH, true),
     CLUSTER_MAP(RowKind.SEGMENTED, true),
+    CLUSTER_LANES(RowKind.SWITCH, true),
     CLUSTER_SONG(RowKind.SWITCH, true),
+    CLUSTER_ALBUM_ART(RowKind.SWITCH, true),
     // Turning location on asks for permission and reconnects by itself, as before.
     SEND_LOCATION(RowKind.SWITCH),
     VIDEO_WHILE_PARKED(RowKind.SWITCH, true),
@@ -100,6 +102,10 @@ internal data class SettingsEnvironment(
 internal object SettingsLayout {
     val categories: List<SettingsCategory> = SettingsCategory.entries
 
+    /** The categories with something to show here; Experimental is empty off the eh32 cluster. */
+    fun categories(env: SettingsEnvironment): List<SettingsCategory> =
+        categories.filter { it != SettingsCategory.EXPERIMENTAL || groups(it, env).isNotEmpty() }
+
     fun groups(category: SettingsCategory, env: SettingsEnvironment): List<SettingsGroup> = when (category) {
         SettingsCategory.CONNECTION -> listOfNotNull(
             SettingsGroup("connection", listOfNotNull(
@@ -130,10 +136,6 @@ internal object SettingsLayout {
         SettingsCategory.CAR -> listOfNotNull(
             SettingsGroup("cluster", listOf(SettingRow.CLUSTER_DIRECTIONS))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
-            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP))
-                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
-            SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG))
-                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
             SettingsGroup("location", listOf(SettingRow.SEND_LOCATION)),
             SettingsGroup("parked", listOf(SettingRow.VIDEO_WHILE_PARKED)),
             SettingsGroup("appearance", listOf(SettingRow.SUNSET_DARK_MODE)),
@@ -142,6 +144,13 @@ internal object SettingsLayout {
         SettingsCategory.APPS -> listOf(
             SettingsGroup("abrp", listOf(SettingRow.ABRP_TELEMETRY, SettingRow.ABRP_ACCOUNT)),
         )
+        // Features not yet tried in a car, each off by default and in the order they were added; only the
+        // eh32 cluster (SWI68, SWI165) has them.
+        SettingsCategory.EXPERIMENTAL -> listOf(
+            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP)),
+            SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
+            SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)),
+        ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),
             SettingsGroup("system", listOf(SettingRow.APP_PERMISSIONS, SettingRow.BLUETOOTH)),

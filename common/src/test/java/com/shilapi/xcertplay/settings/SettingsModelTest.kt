@@ -21,16 +21,25 @@ class SettingsModelTest {
         assertFalse(SettingRow.CLUSTER_DIRECTIONS in rows(SettingsCategory.CAR, env(Generation.SWI69)))
     }
 
-    @Test fun dashboardMapOnlyOnTheEh32Cluster() {
-        assertTrue(SettingRow.CLUSTER_MAP in rows(SettingsCategory.CAR, env(Generation.SWI165)))
-        assertFalse(SettingRow.CLUSTER_MAP in rows(SettingsCategory.CAR, env(Generation.SWI69)))
-        assertTrue(SettingRow.CLUSTER_MAP.appliesOnReconnect)
+    @Test fun dashboardMapSongAndArtAreExperimentalOnTheEh32Cluster() {
+        val experimental = rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165))
+        val added = listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)
+        // In the order they were added.
+        assertEquals(added, experimental)
+        for (row in added) {
+            assertTrue(row.name, row in experimental)
+            assertTrue(row.name, row.appliesOnReconnect)
+            SettingsCategory.entries.filter { it != SettingsCategory.EXPERIMENTAL }.forEach {
+                assertFalse(row.name, row in rows(it, env(Generation.SWI165)))
+            }
+        }
+        assertTrue(rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI69)).isEmpty())
     }
 
-    @Test fun dashboardSongOnlyOnTheEh32Cluster() {
-        assertTrue(SettingRow.CLUSTER_SONG in rows(SettingsCategory.CAR, env(Generation.SWI165)))
-        assertFalse(SettingRow.CLUSTER_SONG in rows(SettingsCategory.CAR, env(Generation.SWI69)))
-        assertTrue(SettingRow.CLUSTER_SONG.appliesOnReconnect)
+    @Test fun experimentalIsListedOnlyWhereItHasSettings() {
+        assertTrue(SettingsCategory.EXPERIMENTAL in SettingsLayout.categories(env(Generation.SWI165)))
+        assertFalse(SettingsCategory.EXPERIMENTAL in SettingsLayout.categories(env(Generation.SWI69)))
+        assertEquals(SettingsCategory.entries.size - 1, SettingsLayout.categories(env(Generation.SWI69)).size)
     }
 
     @Test fun sendLocationLivesUnderCar() {

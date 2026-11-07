@@ -160,6 +160,8 @@ class CarPlayController(
     private val releaseHandsFree: Boolean = false,
     /** MG4 SWI165: send CarPlay turn-by-turn to the instrument cluster's navigation slot. */
     private val clusterDirections: Boolean = false,
+    /** Answer the iPhone's Now Playing artwork transfers and report covers to [artworkListener]. */
+    private val albumArt: Boolean = false,
 ) : Closeable {
     @Volatile private var handsFreeReleased = false
 
@@ -219,6 +221,14 @@ class CarPlayController(
 
     /** Told when the song (or its play state) changes, null when none is known; may run on any thread. */
     @Volatile var songListener: ((com.shilapi.xcertplay.media.CarPlaySong?) -> Unit)? = null
+
+    /** Told when an artwork transfer completes (empty bytes: no cover); may run on the link worker. */
+    @Volatile var artworkListener: ((com.shilapi.xcertplay.transport.Iap2ArtworkTransfer) -> Unit)? = null
+
+    @Volatile private var lastArtwork: com.shilapi.xcertplay.transport.Iap2ArtworkTransfer? = null
+
+    /** The last cover received, for a listener that attaches mid-session. */
+    fun lastArtwork(): com.shilapi.xcertplay.transport.Iap2ArtworkTransfer? = lastArtwork
 
     /** The song known so far, for a listener that attaches mid-session. */
     fun currentSong(): com.shilapi.xcertplay.media.CarPlaySong? = synchronized(songState) { songState.current() }
@@ -301,6 +311,7 @@ class CarPlayController(
                 if (clusterDirections) com.shilapi.xcertplay.vehicle.Mg4ClusterNavigation.stop(appContext)
                 videoListener?.onVideoSessionEnded()
                 synchronized(playbackStatus) { playbackStatus.clear() }?.let { playing -> playbackListener?.invoke(playing) }
+                lastArtwork = null
                 val hadSong = synchronized(songState) { (songState.current() != null).also { songState.clear() } }
                 if (hadSong) songListener?.invoke(null)
             }
@@ -571,6 +582,13 @@ class CarPlayController(
             Thread.currentThread().interrupt()
             false
         }
+    }
+
+    private fun onArtworkTransfer(transfer: com.shilapi.xcertplay.transport.Iap2ArtworkTransfer) {
+        if (closed) return
+        lastArtwork = transfer
+        debugLog("iap2 artwork transfer id=0x${transfer.id.toString(16)} bytes=${transfer.bytes.size}")
+        artworkListener?.invoke(transfer)
     }
 
     // Route guidance goes to the MG4 cluster; playback status and the song to the host.
@@ -1113,6 +1131,7 @@ class CarPlayController(
                 stream,
                 traceContext = "wireless-rfcomm",
                 onTrace = ::debugLog,
+                onArtwork = if (albumArt) ::onArtworkTransfer else null,
             ).also { csm = it }
             debugLog("wireless iAP2 CSM channel opened over RFCOMM")
             if (isStaleWirelessRun(generation)) {
@@ -1217,6 +1236,7 @@ class CarPlayController(
                 stream,
                 traceContext = "wireless-tunnel",
                 onTrace = ::debugLog,
+                onArtwork = if (albumArt) ::onArtworkTransfer else null,
             )
         } catch (error: Throwable) {
             debugLog("Could not open the tunneled iAP2 link", error)
@@ -1797,6 +1817,7 @@ class CarPlayController(
                 tracedCarkit,
                 traceContext = "wired",
                 onTrace = ::debugLog,
+                onArtwork = if (albumArt) ::onArtworkTransfer else null,
             )
             this.csm = csm
             debugLog("wired iAP2 CSM channel opened")

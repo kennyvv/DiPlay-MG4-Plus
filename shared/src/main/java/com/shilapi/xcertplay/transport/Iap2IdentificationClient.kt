@@ -57,6 +57,8 @@ data class Iap2IdentificationConfig(
     val chargingConnectors: EvChargingConnectors = EvChargingConnectors.CCS2_TYPE2,
     /** Also offer wheel speed ($PASCD) in the location component; needs [locationInformationEnabled]. */
     val vehicleSpeedEnabled: Boolean = false,
+    /** Tells the iPhone it can store lane guidance, so it sends 0x5204 for the MG4 cluster. */
+    val laneGuidanceEnabled: Boolean = false,
 ) {
     constructor(
         name: String,
@@ -175,6 +177,7 @@ class Iap2IdentificationClient(private val session: Iap2Session) {
             } else {
                 MESSAGES_RECEIVED_FROM_PHONE
             }
+            if (config.laneGuidanceEnabled) receivedMessages += LANE_GUIDANCE_INFO_UPDATE
             if (config.vehicleStatusEnabled) {
                 sentMessages += Iap2VehicleStatus.VEHICLE_STATUS_UPDATE
                 receivedMessages += intArrayOf(
@@ -260,8 +263,10 @@ class Iap2IdentificationClient(private val session: Iap2Session) {
                     u16(6, 8)
                     // The iPhone only sends 0x5204 lane guidance when the accessory says it can
                     // store it (from upstream DiPlay); the MG4 cluster draws the lanes.
-                    u16(7, 64) // MaxLaneGuidanceDescriptionLength
-                    u16(8, 8) // MaxLaneGuidanceStorageCapacity
+                    if (config.laneGuidanceEnabled) {
+                        u16(7, 64) // MaxLaneGuidanceDescriptionLength
+                        u16(8, 8) // MaxLaneGuidanceStorageCapacity
+                    }
                 }
             }
         }
@@ -299,13 +304,13 @@ class Iap2IdentificationClient(private val session: Iap2Session) {
             0x5001, // NowPlayingUpdate
             0x5201, // RouteGuidanceUpdate
             0x5202, // RouteGuidanceManeuverUpdate
-            0x5204, // LaneGuidanceInfoUpdate
             0xae01, // PowerUpdate
             0x4158, // CommunicationsUpdate
             0x4155, // CallStateUpdate
             0x4300, // CarPlayAvailability
         )
         private const val POWER_SOURCE_UPDATE = 0xae03
+        private const val LANE_GUIDANCE_INFO_UPDATE = 0x5204
         private const val CARPLAY_AVAILABILITY = 0x4300
         private const val CARPLAY_START_SESSION = 0x4301
         private const val ACCESSORY_WIFI_CONFIGURATION_INFORMATION = 0x5703

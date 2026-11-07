@@ -46,6 +46,8 @@ object AirPlayPersistence {
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
     private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
     private const val KEY_CLUSTER_SONG = "mg4_cluster_song"
+    private const val KEY_CLUSTER_ALBUM_ART = "mg4_cluster_album_art"
+    private const val KEY_CLUSTER_LANES = "mg4_cluster_lanes"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -212,6 +214,26 @@ object AirPlayPersistence {
     fun saveClusterSong(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_CLUSTER_SONG, enabled)
+            .apply()
+    }
+
+    /** Experimental CarPlay lane guidance on the cluster's navigation card, off by default. */
+    fun loadClusterLanes(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_LANES, false)
+
+    fun saveClusterLanes(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_CLUSTER_LANES, enabled)
+            .apply()
+    }
+
+    /** Experimental album art (iAP2 file transfers) on the cluster song card, off by default. */
+    fun loadClusterAlbumArt(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_ALBUM_ART, false)
+
+    fun saveClusterAlbumArt(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_CLUSTER_ALBUM_ART, enabled)
             .apply()
     }
 

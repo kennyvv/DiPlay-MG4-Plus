@@ -45,4 +45,14 @@ class CarPlaySongStateTest {
         state.clear()
         assertNull(state.current())
     }
+
+    @Test
+    fun theCoverIdBelongsToItsSong() {
+        val state = CarPlaySongState()
+        state.accept(update { group(0) { string(1, "Song"); u8(26, 3) } })
+        assertEquals(3, state.current()?.artworkId)
+        // A new song without an id must not keep the old cover.
+        state.accept(update { group(0) { string(1, "Next") } })
+        assertNull(state.current()?.artworkId)
+    }
 }

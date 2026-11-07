@@ -1,5 +1,11 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.5 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Settings > Experimental.** A new category for features not yet tried in a car, each off by default, in the order they were added: Map on the dashboard, Lane guidance on the dashboard, Song on the dashboard, Album art on the song card. Map and song moved here from Car. Fixes (SWI68 detection, no Bluetooth settings while hands-free is up) stay always on.
+- **Lane guidance is now a switch.** Off, the iPhone isn't told the car can store lanes, so the identification is exactly as before swi68.3. Needs Directions on the dashboard.
+- **Album art on the song card (experimental).** Ports upstream DiPlay's iAP2 file-transfer receiver for Now Playing artwork. Off, file-transfer sessions are left unanswered as before; on, covers are reassembled (2 MB limit), decoded off the main thread near the card size, and shown only for the song whose artwork transfer id they carry.
+
 mg4.96-swi68.4 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Song on the dashboard (experimental).** New in Settings > Car, off by default. Shows the CarPlay song (title, artist, album, a paused mark) in the cluster's centre square on its Music page, drawn by MG4CPlay from the iPhone's now-playing updates (song parser ported from upstream DiPlay). The car's own song card can't be used: read from the SWI68 firmware, every way into it is bound to a stock app by package name (the AllGo media browser, fed only by AllGo's CarPlay service; the Amazon online music app; the Bluetooth stack). The map and the song card share one cluster-square window helper (`Mg4ClusterSquare`); when the cluster page can't be read, the square goes to the map. Logged as `Cluster song:` lines.

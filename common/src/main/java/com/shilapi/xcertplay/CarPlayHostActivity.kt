@@ -148,6 +148,7 @@ class CarPlayHostActivity : ComponentActivity() {
             vehicleStatusEnabled = com.shilapi.xcertplay.vehicle.VehicleIntegration.vehicleStatusEnabled(this),
             chargingConnectors = com.shilapi.xcertplay.vehicle.VehicleSettings.chargingConnectors(this),
             vehicleSpeedEnabled = locationReportingEnabled && com.shilapi.xcertplay.vehicle.VehicleIntegration.wheelSpeedEnabled(this),
+            laneGuidanceEnabled = laneGuidanceEnabled(),
         ),
         label = "MG4CPlay",
         hostName = "diplay-" + DiPlayBootstrap.deviceId(airPlayIdentity).replace(":", "").lowercase(),
@@ -2770,10 +2771,23 @@ class CarPlayHostActivity : ComponentActivity() {
         val enabled = AirPlayPersistence.loadClusterSong(this) &&
             Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
         target.songListener = if (enabled) { song -> runOnUiThread { Mg4ClusterSong.update(song) } } else null
+        // Covers arrive only when the session was opened with album art on.
+        target.artworkListener = if (enabled) Mg4ClusterSong::updateArtwork else null
         runOnUiThread {
             if (enabled) Mg4ClusterSong.attach(this, target.currentSong(), ::appendLog) else Mg4ClusterSong.detach()
         }
+        if (enabled) target.lastArtwork()?.let(Mg4ClusterSong::updateArtwork)
     }
+
+    /** Lane guidance from the iPhone, only for the dashboard directions that draw it. */
+    private fun laneGuidanceEnabled(): Boolean =
+        AirPlayPersistence.loadClusterDirections(this) && AirPlayPersistence.loadClusterLanes(this) &&
+            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
+
+    /** Album art over iAP2 file transfers, only for the cluster song card it feeds. */
+    private fun albumArtEnabled(): Boolean =
+        AirPlayPersistence.loadClusterSong(this) && AirPlayPersistence.loadClusterAlbumArt(this) &&
+            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
 
     /** The experimental cluster map, on the eh32 cluster (SWI68, SWI165) only. */
     private fun clusterMapContent(): CarPlayClusterDisplay.Content? =
@@ -3205,6 +3219,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 AirPlayPersistence.loadCallsOverCarPlayOnly(this),
             clusterDirections = Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165 &&
                 AirPlayPersistence.loadClusterDirections(this),
+            albumArt = albumArtEnabled(),
         )
         controller = next
         attachClusterSong(next)
@@ -3574,6 +3589,7 @@ class CarPlayHostActivity : ComponentActivity() {
         CarPlayMediaKeys.detach(oldController)
         CarPlayBackgroundSession.clear(oldController)
         oldController?.songListener = null
+        oldController?.artworkListener = null
         runOnUiThread {
             Mg4ClusterMap.detach()
             Mg4ClusterSong.detach()

@@ -36,4 +36,20 @@ class Mg4ClusterMapTest {
         assertTrue(Mg4ClusterSong.visibleOn(null, hasSong = true, mapShown = false))
         assertFalse(Mg4ClusterSong.visibleOn(null, hasSong = true, mapShown = true))
     }
+
+    @Test
+    fun aCoverShowsOnlyForTheSongThatNamesIt() {
+        val song = com.shilapi.xcertplay.media.CarPlaySong("Song", null, null, playing = true, artworkId = 7)
+        assertTrue(Mg4ClusterSong.coverMatches(song, 7))
+        assertFalse(Mg4ClusterSong.coverMatches(song, 8))
+        assertFalse(Mg4ClusterSong.coverMatches(song.copy(artworkId = null), 7))
+        assertFalse(Mg4ClusterSong.coverMatches(null, 7))
+    }
+
+    @Test
+    fun coversAreDecodedNearTheCardSize() {
+        assertEquals(1, Mg4ClusterSong.sampleSize(100, 100, 104))
+        assertEquals(4, Mg4ClusterSong.sampleSize(600, 600, 104))
+        assertEquals(8, Mg4ClusterSong.sampleSize(1000, 1000, 104))
+    }
 }
