@@ -21,6 +21,17 @@ class Mg4FirmwareProfileTest {
     }
 
     @Test
+    fun swi68SharesTheSwi165Profile() {
+        val profile = Mg4FirmwareProfile.forFirmware("SWI68-29958-1300R59")
+        assertEquals(Generation.SWI165, profile.generation)
+        assertEquals("SWI68-29958-1300R59", profile.firmware)
+        assertEquals("com.saicmotor.hmi.launcher", profile.stockLauncherPackage)
+        assertTrue(profile.preferSurfaceVideo)
+        assertEquals(AudioMode.CARPLAY_WIFI, profile.defaultAudioMode)
+        assertTrue(profile.squareCorners)
+    }
+
+    @Test
     fun swi69KeepsMeasuredLauncherCardAndTextureVideo() {
         val profile = Mg4FirmwareProfile.forFirmware("SWI69-12345-1000R01")
         assertEquals(Generation.SWI69, profile.generation)
@@ -32,7 +43,7 @@ class Mg4FirmwareProfileTest {
 
     @Test
     fun unknownOrMissingFirmwareKeepsDefaults() {
-        for (firmware in listOf(null, "", "  ", "SWI68-1", "OTHER-1.0")) {
+        for (firmware in listOf(null, "", "  ", "SWI6-1", "OTHER-1.0")) {
             val profile = Mg4FirmwareProfile.forFirmware(firmware)
             assertEquals(Generation.OTHER, profile.generation)
             assertFalse(profile.preferSurfaceVideo)

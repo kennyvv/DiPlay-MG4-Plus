@@ -1361,6 +1361,12 @@ class CarPlayController(
         }
         when (bluetoothAudioConnected(adapter)) {
             false -> {
+                // iOS drops A2DP to the car during wireless CarPlay. A phone still on hands-free
+                // is paired and connected, so opening Bluetooth settings over CarPlay fixes nothing.
+                if (connectedBluetoothDevices(adapter, BLUETOOTH_PROFILE_HEADSET_CLIENT, BluetoothProfile::class.java).isNotEmpty()) {
+                    debugLog("car source: no A2DP device connected, hands-free is; leaving source alone")
+                    return
+                }
                 debugLog("car source: no A2DP device connected; prompting the driver")
                 promptConnectBluetoothForAudio()
                 return

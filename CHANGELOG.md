@@ -1,5 +1,11 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.1 (test build for SWI68). Not yet tried in the car.
+
+- **SWI68 is treated like SWI165.** The SWI68-29958-1300R59 firmware is the same eh32 platform as SWI165: same launcher, media service, nFore Bluetooth, wheel-key broadcast, cluster MapService and AllGo CarPlay app. SWI68 was unknown firmware before, so it got none of the SWI165 fixes and fell back to Bluetooth Music, which sent the driver to Bluetooth settings ("connect to Bluetooth for audio") each time CarPlay opened. It now gets Wi-Fi audio, the overlay video renderer, square corners, wheel keys and the other SWI165 defaults.
+- **No Bluetooth settings over CarPlay while hands-free is connected.** In Bluetooth Music mode, a phone with no A2DP link but a live hands-free link is left alone instead of opening Bluetooth settings: iOS drops A2DP to the car during wireless CarPlay on purpose.
+- **EVHardware vendored.** The `vendor/MG4ABRP` submodule's repository is gone (404), so the tree builds against the EVHardware copy vendored in [Skittle6938/DiAuto-MG4](https://github.com/Skittle6938/DiAuto-MG4) (`evhardware/`, commit 5e2e6d8), which also knows SWI68 and its vehicle-speed scale.
+
 mg4.96 (test build). Not yet tried in the car: test plan E6, F12.
 
 - **Pair your iPhone inside the app.** On MG4, **Pair another** (or **Open Bluetooth** when no iPhone is paired) now searches for nearby phones in MG4CPlay, lists them, and pairs when you tap one, with the confirm-the-code step shown in the app. It saves the iPhone and connects. If the car's Bluetooth refuses any step, it opens the Android Bluetooth settings as before. Log lines start with `Pairing:` in the Settings changes section of the report.

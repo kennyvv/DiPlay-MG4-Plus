@@ -23,7 +23,7 @@ internal data class Mg4FirmwareProfile(
      * stock AllGo CarPlay app) instead of a TextureView (GPU composited) by default.
      */
     val preferSurfaceVideo: Boolean,
-    /** How music reaches the speakers when the user has not chosen: Wi-Fi on SWI165, hybrid Bluetooth elsewhere. */
+    /** How music reaches the speakers when the user has not chosen: Wi-Fi on SWI165/SWI68, hybrid Bluetooth elsewhere. */
     val defaultAudioMode: AudioMode,
     /**
      * Describe the screen without view areas, so iOS draws square corners like the stock CarPlay
@@ -31,6 +31,7 @@ internal data class Mg4FirmwareProfile(
      */
     val squareCorners: Boolean = false,
 ) {
+    /** [SWI165] covers the eh32 platform, which also runs SWI68 firmware. */
     enum class Generation { SWI69, SWI165, OTHER }
 
     /** Window position and size in pixels, relative to the launcher's content area. */
@@ -49,7 +50,12 @@ internal data class Mg4FirmwareProfile(
             val value = firmware?.trim()?.takeIf(String::isNotEmpty)
             return when {
                 value == null -> other(null)
-                value.startsWith("SWI165") -> Mg4FirmwareProfile(
+                // SWI68 is the same eh32 platform as SWI165: read from the SWI68-29958-1300R59 OTA,
+                // it ships the same launcher, MediaService, nFore Bluetooth, SystemUI wheel-key
+                // broadcast, MapService and AllgoCarplay_EH32. Left as OTHER it fell back to hybrid
+                // Bluetooth audio, whose A2DP check sent the driver to Bluetooth settings because
+                // the iPhone drops A2DP during wireless CarPlay.
+                value.startsWith("SWI165") || value.startsWith("SWI68") -> Mg4FirmwareProfile(
                     generation = Generation.SWI165,
                     firmware = value,
                     stockLauncherPackage = "com.saicmotor.hmi.launcher",
