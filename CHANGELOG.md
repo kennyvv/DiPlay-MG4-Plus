@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.11, the first DiPlay-MG4 Plus release.
+
+- **Updates come from this repository.** The in-app update check reads releases of `kennyvv/DiPlay-MG4-Plus` instead of `andrew-snape/DiPlay-MG4`, so a Plus install is never offered an upstream build without SWI68 support. Earlier swi68 builds still check andrew-snape's releases; install this one by hand.
+
 mg4.96-swi68.10 (test build for SWI68 and SWI165).
 
 - **Map renderer setting removed.** The overlay SurfaceView looked clearly better in the car and performs fine (2026-11-08), so it is the only renderer again, hiding by parking where the cluster never looks. The TextureView option from swi68.8-9 is gone.

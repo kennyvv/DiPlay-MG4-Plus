@@ -12,7 +12,7 @@ DiPlay-MG4 Plus builds on two projects, and almost everything in it is their wor
   video, steering wheel, dashboard directions, location, charging, dark mode, the two-pane Settings
   and more). This repository continues from its `mg4.96` build.
 
-Current build: **0.2.9-mg4.96-swi68.10**. It installs as `com.shihab.diplay.hudtest`, the same
+Current build: **0.2.9-mg4.96-swi68.11**. It installs as `com.shihab.diplay.hudtest`, the same
 package as andrew-snape's builds, so it installs over them; it can sit alongside an upstream
 `com.shihab.diplay` install. Run one at a time.
 
