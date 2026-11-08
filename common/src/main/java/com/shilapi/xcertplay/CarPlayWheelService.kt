@@ -27,10 +27,14 @@ internal object CarPlayWheel {
 
     val carPlayOnScreen: Boolean get() = onScreen && controller != null
 
-    /** The knob report for each joystick command: nudges for the directions, the knob button to select. */
+    /**
+     * The knob report for each joystick command. Up and down turn the knob, which steps CarPlay's
+     * highlight from element to element; a nudge there panned Apple Maps instead (car, 2026-11-08).
+     * Left and right stay nudges, for rows and grids. The centre is the knob's button.
+     */
     fun knob(command: CarPlayWheelControl.Command): AirPlayKnobState = when (command) {
-        CarPlayWheelControl.Command.UP -> AirPlayKnobState(y = -NUDGE)
-        CarPlayWheelControl.Command.DOWN -> AirPlayKnobState(y = NUDGE)
+        CarPlayWheelControl.Command.UP -> AirPlayKnobState(wheel = -1)
+        CarPlayWheelControl.Command.DOWN -> AirPlayKnobState(wheel = 1)
         CarPlayWheelControl.Command.LEFT -> AirPlayKnobState(x = -NUDGE)
         CarPlayWheelControl.Command.RIGHT -> AirPlayKnobState(x = NUDGE)
         CarPlayWheelControl.Command.SELECT -> AirPlayKnobState(select = true)

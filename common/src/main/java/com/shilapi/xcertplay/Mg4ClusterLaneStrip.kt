@@ -44,7 +44,6 @@ internal object Mg4ClusterLaneStrip {
             { tab -> visibleOn(tab, lanes.isNotEmpty(), Mg4ClusterMap.isShown) },
             { this.log("Cluster lanes: $it") },
             band = BAND,
-            translucent = true,
         ) { display -> LaneView(display).also { view = it } }
     }
 

@@ -115,9 +115,11 @@ class CarPlayWheelControlTest {
     }
 
     @Test
-    fun directionsAreKnobNudgesAndTheCentreSelects() {
-        assertEquals(-127, CarPlayWheel.knob(Command.UP).y)
-        assertEquals(127, CarPlayWheel.knob(Command.DOWN).y)
+    fun upAndDownTurnTheKnobSidewaysNudgesAndTheCentreSelects() {
+        // A y nudge panned Apple Maps; turning steps the highlight instead.
+        assertEquals(-1, CarPlayWheel.knob(Command.UP).wheel)
+        assertEquals(1, CarPlayWheel.knob(Command.DOWN).wheel)
+        assertEquals(0, CarPlayWheel.knob(Command.UP).y)
         assertEquals(-127, CarPlayWheel.knob(Command.LEFT).x)
         assertEquals(127, CarPlayWheel.knob(Command.RIGHT).x)
         assertTrue(CarPlayWheel.knob(Command.SELECT).select)

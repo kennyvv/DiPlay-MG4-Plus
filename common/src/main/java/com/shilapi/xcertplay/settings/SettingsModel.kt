@@ -60,6 +60,7 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
 
     CLUSTER_DIRECTIONS(RowKind.SWITCH, true),
     CLUSTER_MAP(RowKind.SEGMENTED, true),
+    CLUSTER_MAP_SIZE(RowKind.SEGMENTED, true),
     CLUSTER_LANES(RowKind.SEGMENTED, true),
     CLUSTER_SONG(RowKind.SWITCH, true),
     CLUSTER_ALBUM_ART(RowKind.SWITCH, true),
@@ -149,7 +150,7 @@ internal object SettingsLayout {
         // Features not yet tried in a car, each off by default and in the order they were added; only the
         // eh32 cluster (SWI68, SWI165) has them.
         SettingsCategory.EXPERIMENTAL -> listOf(
-            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP)),
+            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE)),
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
             SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)),
             SettingsGroup("carplay_wheel", listOf(SettingRow.CARPLAY_WHEEL)),

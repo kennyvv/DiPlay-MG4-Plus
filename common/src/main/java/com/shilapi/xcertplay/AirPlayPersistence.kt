@@ -45,6 +45,7 @@ object AirPlayPersistence {
     private const val KEY_VIDEO_COLOUR_RANGE = "video_colour_range"
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
     private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
+    private const val KEY_CLUSTER_MAP_SIZE = "mg4_cluster_map_size"
     private const val KEY_CLUSTER_SONG = "mg4_cluster_song"
     private const val KEY_CLUSTER_ALBUM_ART = "mg4_cluster_album_art"
     private const val KEY_CLUSTER_LANES = "mg4_cluster_lanes"
@@ -205,6 +206,19 @@ object AirPlayPersistence {
     fun saveClusterMap(context: Context, content: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Content?) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_CLUSTER_MAP, content?.name)
+            .apply()
+    }
+
+    /** How large Apple Maps draws in the cluster square; smaller than the 1:1 stream by default. */
+    fun loadClusterMapSize(context: Context): com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Size {
+        val name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLUSTER_MAP_SIZE, null)
+        return com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Size.entries.firstOrNull { it.name == name }
+            ?: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Size.MEDIUM
+    }
+
+    fun saveClusterMapSize(context: Context, size: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Size) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_CLUSTER_MAP_SIZE, size.name)
             .apply()
     }
 

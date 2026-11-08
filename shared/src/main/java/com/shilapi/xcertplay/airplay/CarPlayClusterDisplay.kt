@@ -22,14 +22,25 @@ object CarPlayClusterDisplay {
     /** A multiple of 8 just over the 260 px square; the cluster window scales it to fit. */
     const val SIDE_PIXELS = 264
 
+    /**
+     * How big Apple Maps draws its elements in the square. Apple lays out the stream by its pixel
+     * size, so a larger stream scaled down into the same 260 px draws everything smaller: at 264 px
+     * the elements were far too large in the car (2026-11-08). Sides are multiples of 8.
+     */
+    enum class Size(val sidePixels: Int) {
+        LARGE(SIDE_PIXELS),
+        MEDIUM(400),
+        SMALL(528),
+    }
+
     // An estimate (not measured): 260 px of an 800x480 panel about 7 inches across. Apple Maps
     // ignored the physical size on BYD; it is sent to keep the panel's density plausible.
     private const val SIDE_PHYSICAL_MM = 49
     private const val FPS = 30
 
-    fun config(content: Content): AirPlayDisplayConfig = AirPlayDisplayConfig(
-        widthPixels = SIDE_PIXELS,
-        heightPixels = SIDE_PIXELS,
+    fun config(content: Content, size: Size = Size.LARGE): AirPlayDisplayConfig = AirPlayDisplayConfig(
+        widthPixels = size.sidePixels,
+        heightPixels = size.sidePixels,
         widthPhysicalMm = SIDE_PHYSICAL_MM,
         heightPhysicalMm = SIDE_PHYSICAL_MM,
         fps = FPS,

@@ -40,4 +40,16 @@ class CarPlayClusterDisplayTest {
         assertEquals(30, alt["maxFPS"])
         assertTrue("altScreen" in setupEnabledFeatures(withCluster, null))
     }
+
+    @Test
+    fun aLargerStreamDrawsTheMapSmaller() {
+        for (size in CarPlayClusterDisplay.Size.entries) {
+            val cluster = CarPlayClusterDisplay.config(CarPlayClusterDisplay.Content.MAP, size)
+            assertEquals(size.sidePixels, cluster.widthPixels)
+            assertEquals(size.sidePixels, cluster.heightPixels)
+            assertEquals(0, cluster.widthPixels % 8)
+        }
+        assertTrue(CarPlayClusterDisplay.Size.SMALL.sidePixels > CarPlayClusterDisplay.Size.MEDIUM.sidePixels)
+        assertTrue(CarPlayClusterDisplay.Size.MEDIUM.sidePixels > CarPlayClusterDisplay.Size.LARGE.sidePixels)
+    }
 }

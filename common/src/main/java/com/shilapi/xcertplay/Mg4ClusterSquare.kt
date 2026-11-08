@@ -23,15 +23,14 @@ import com.shilapi.xcertplay.vehicle.VehicleIntegration
  * square shows on the cluster, and that the square sits centred in what the margins leave on the
  * 800x480 display, not at the margins themselves.
  *
- * A window covers the square or a [Band] of it. Each window follows the cluster page ([VehicleIntegration.clusterTab], read once a second) and
- * moves off the display when its page is not showing, so a decoder surface inside it survives.
+ * A window covers the square or a [Band] of it. Each window follows the cluster page
+ * ([VehicleIntegration.clusterTab], read once a second) and turns fully transparent when its page is
+ * not showing, so a decoder surface inside it survives.
  */
 internal class Mg4ClusterSquare private constructor(
     private val windows: WindowManager,
     private val root: View,
     private val params: WindowManager.LayoutParams,
-    private val place: Placement,
-    private val displayWidth: Int,
     private val visibleOn: (Int?) -> Boolean,
     private val log: (String) -> Unit,
 ) {
@@ -78,9 +77,9 @@ internal class Mg4ClusterSquare private constructor(
             tabLogged = true
         }
         tab = next
-        val x = if (visible) place.x else displayWidth + place.side
-        if (params.x == x) return
-        params.x = x
+        val alpha = if (visible) 1f else 0f
+        if (params.alpha == alpha) return
+        params.alpha = alpha
         runCatching { windows.updateViewLayout(root, params) }
     }
 
@@ -113,7 +112,6 @@ internal class Mg4ClusterSquare private constructor(
             visibleOn: (Int?) -> Boolean,
             log: (String) -> Unit,
             band: Band = Band(),
-            translucent: Boolean = false,
             content: (Context) -> View,
         ): Mg4ClusterSquare? {
             val app = context.applicationContext
@@ -138,13 +136,17 @@ internal class Mg4ClusterSquare private constructor(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                if (translucent) PixelFormat.TRANSLUCENT else PixelFormat.OPAQUE,
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                // Translucent so a hidden window (alpha 0) lets the cluster app's page through.
+                PixelFormat.TRANSLUCENT,
             ).apply {
                 gravity = Gravity.TOP or Gravity.START
-                // Hidden until the first page read decides.
-                x = size.x + place.side
+                x = place.x
                 y = place.y + band.top.coerceIn(0, place.side - 1)
+                // Hidden until the first page read decides. Moving a window off the display does not
+                // hide it on the cluster: Android pulls it back to the edge (x 540 on 800 px, beside
+                // the 482 square, seen in the car 2026-11-08), so hiding is transparency instead.
+                alpha = 0f
                 this.title = title
             }
             try {
@@ -154,7 +156,7 @@ internal class Mg4ClusterSquare private constructor(
                 return null
             }
             log("window on display ${display.displayId} ${size.x}x${size.y}, ${place.side} px square at ${place.x},${place.y}")
-            return Mg4ClusterSquare(manager, root, params, place, size.x, visibleOn, log).also {
+            return Mg4ClusterSquare(manager, root, params, visibleOn, log).also {
                 it.startPolling("mg4-cluster-square")
             }
         }

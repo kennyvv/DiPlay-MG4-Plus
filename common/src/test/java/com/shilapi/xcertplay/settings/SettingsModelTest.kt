@@ -24,7 +24,7 @@ class SettingsModelTest {
     @Test fun dashboardMapSongAndArtAreExperimentalOnTheEh32Cluster() {
         val experimental = rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165))
         val added = listOf(
-            SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART,
+            SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART,
             SettingRow.CARPLAY_WHEEL,
         )
         // In the order they were added.

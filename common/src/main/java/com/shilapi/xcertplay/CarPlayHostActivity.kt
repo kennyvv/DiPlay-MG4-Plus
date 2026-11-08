@@ -2761,7 +2761,7 @@ class CarPlayHostActivity : ComponentActivity() {
             // Bluetooth music would cut out and never resume. Wi-Fi audio advertises audio.
             disableAudioOutput = sessionAudioMode == AudioMode.HYBRID_BLUETOOTH,
             cluster = clusterMapContent()?.let { content ->
-                CarPlayClusterDisplay.config(content).also {
+                CarPlayClusterDisplay.config(content, AirPlayPersistence.loadClusterMapSize(this)).also {
                     appendLog("Cluster map: requesting ${it.widthPixels}x${it.heightPixels} url=${it.initialUrl}")
                 }
             },
@@ -3118,7 +3118,9 @@ class CarPlayHostActivity : ComponentActivity() {
         snapshot.sink.setScreenStreamActiveChangedListener { type, active ->
             onScreenStreamStateChanged(restartGeneration, type, active)
         }
-        if (Mg4ClusterMap.isShown) Mg4ClusterMap.attach(this, snapshot.sink, ::appendLog)
+        if (Mg4ClusterMap.isShown) {
+            Mg4ClusterMap.attach(this, snapshot.sink, AirPlayPersistence.loadClusterMapSize(this).sidePixels, ::appendLog)
+        }
         CarPlayWheel.controller = snapshot.controller
         CarPlayWheel.log = ::appendLog
         attachClusterSong(snapshot.controller)
@@ -3198,7 +3200,8 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         sink = renderer
         runOnUiThread {
-            if (airPlayConfig.cluster != null) Mg4ClusterMap.attach(this, renderer, ::appendLog) else Mg4ClusterMap.detach()
+            val cluster = airPlayConfig.cluster
+            if (cluster != null) Mg4ClusterMap.attach(this, renderer, cluster.widthPixels, ::appendLog) else Mg4ClusterMap.detach()
         }
         currentSurface?.let(::attachSurface)
         val media = createMediaEngine(renderer)

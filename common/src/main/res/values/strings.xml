@@ -208,7 +208,11 @@
     <string name="mg4_cluster_map_off">Off</string>
     <string name="mg4_cluster_map_map">Map</string>
     <string name="mg4_cluster_map_turn_card">Next turn</string>
-    <string name="mg4_cluster_map_description">Asks the iPhone for CarPlay’s instrument-cluster screen and shows it in the square in the middle of the cluster, on its Navigation page. Map shows Apple Maps with the next turn on it; Next turn shows only the turn card. The car’s own navigation card and anything else in that square (such as MG4Control’s module) is covered while it shows. Experimental: not yet tried in a car. Applies next time CarPlay connects.</string>
+    <string name="mg4_cluster_map_size">Map element size</string>
+    <string name="mg4_cluster_map_size_large">Large</string>
+    <string name="mg4_cluster_map_size_medium">Medium</string>
+    <string name="mg4_cluster_map_size_small">Small</string>
+    <string name="mg4_cluster_map_description">Asks the iPhone for CarPlay’s instrument-cluster screen and shows it in the square in the middle of the cluster, on its Navigation page. Map shows Apple Maps with the next turn on it; Next turn shows only the turn card. The car’s own navigation card and anything else in that square (such as MG4Control’s module) is covered while it shows. Experimental: not yet tried in a car. Applies next time CarPlay connects. Map element size asks the iPhone for a larger picture and shrinks it into the square, so the map, turn card and labels draw smaller (Medium by default).</string>
     <string name="mg4_cluster_lanes">Lane guidance on the dashboard</string>
     <string name="mg4_cluster_lanes_car">Car icons</string>
     <string name="mg4_cluster_lanes_drawn">Drawn by MG4CPlay</string>

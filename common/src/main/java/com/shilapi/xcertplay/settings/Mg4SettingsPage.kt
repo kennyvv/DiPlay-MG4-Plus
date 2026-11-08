@@ -400,6 +400,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
         SettingRow.CLUSTER_MAP -> R.string.mg4_cluster_map
+        SettingRow.CLUSTER_MAP_SIZE -> R.string.mg4_cluster_map_size
         SettingRow.CLUSTER_LANES -> R.string.mg4_cluster_lanes
         SettingRow.CLUSTER_SONG -> R.string.mg4_cluster_song
         SettingRow.CLUSTER_ALBUM_ART -> R.string.mg4_cluster_album_art
@@ -498,6 +499,13 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     host.editNavigationChannel { changed(row, AirPlayPersistence.loadNavigationAudioChannel(activity).toString()); host.render() }
                 }
                 SettingRow.CLUSTER_DIRECTIONS -> switch(AirPlayPersistence.loadClusterDirections(activity)) { AirPlayPersistence.saveClusterDirections(activity, it) }
+                SettingRow.CLUSTER_MAP_SIZE -> {
+                    val sizes = CarPlayClusterDisplay.Size.entries
+                    segmented(
+                        listOf(R.string.mg4_cluster_map_size_large, R.string.mg4_cluster_map_size_medium, R.string.mg4_cluster_map_size_small).map(activity::getString),
+                        sizes.indexOf(AirPlayPersistence.loadClusterMapSize(activity)),
+                    ) { AirPlayPersistence.saveClusterMapSize(activity, sizes[it]) }
+                }
                 SettingRow.CLUSTER_LANES -> {
                     val modes = AirPlayPersistence.LaneGuidance.entries
                     segmented(

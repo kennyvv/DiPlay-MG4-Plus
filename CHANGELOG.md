@@ -1,5 +1,11 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.8 (test build for SWI68 and SWI165). Fixes from the first car test (2026-11-08): album art, map, song card and wheel control all worked.
+
+- **Song card drew over the navigation page.** Cluster windows were hidden by moving them off the display, but Android pulls such a window back to the edge (x 540 on the 800 px display, beside the square at 482), so the song card stayed visible over the map. Hidden windows now stay on the square and turn fully transparent. The map draws on a TextureView, since a SurfaceView's layer ignores window transparency.
+- **Map element size.** Apple Maps lays the cluster stream out by its pixel size, so at 264 px everything was very large. New Experimental row next to the map: Large (264 px, as before), Medium (400 px, the default) or Small (528 px); the stream is scaled into the 260 px square.
+- **Wheel control in Apple Maps.** Up and down nudged the knob, which pans Apple Maps when the map has focus. They now turn the knob, which steps CarPlay's highlight from element to element; left and right stay nudges.
+
 mg4.96-swi68.7 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Steering-wheel joystick for CarPlay (experimental).** Settings > Experimental. Hold the centre of the right-hand joystick while CarPlay is on screen to switch CarPlay control on: up, down, left and right nudge CarPlay's highlight (the knob MG4CPlay already declares) and the centre selects; hold it again, or leave CarPlay, to give the joystick back to volume and tracks. The car sends wheel keys as broadcasts no app can stop, so an accessibility service filters the joystick first (297-301 only), the way MG4Control's advanced shortcuts do; out of CarPlay control, a short centre press is held for 500 ms and replayed to the car unchanged. The switch adds or removes only MG4CPlay's service in Android's accessibility list. Logged as `Wheel:` lines.
