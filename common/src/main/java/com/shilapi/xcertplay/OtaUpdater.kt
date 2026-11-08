@@ -25,7 +25,7 @@ internal object OtaUpdater {
     private const val TAG = "DiPlay_OTA"
     private const val SHELL_TMP_DIR = "/data/local/tmp"
     private const val STAGED_APK_NAME = "mg4cplay-update.apk"
-    private const val REPO = "andrew-snape/DiPlay-MG4"
+    private const val REPO = "kennyvv/DiPlay-MG4-Plus"
     private const val RELEASES = "https://api.github.com/repos/$REPO/releases?per_page=20"
     private const val PREFS = "ota_updater"
     private const val KEY_LAST_CHECK = "last_check"

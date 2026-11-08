@@ -1,13 +1,55 @@
-# MG4CPlay (SWI165 fork)
+# DiPlay-MG4 Plus
 
-Wireless CarPlay for the MG4 head unit. This is a personal fork of
-[fatihdonmezdev/DiPlay-MG4](https://github.com/fatihdonmezdev/DiPlay-MG4), adapted
-for an Australian **MG4 on SWI165 firmware** (`SWI165-29176-1100R11`, Android 9,
-AUTUS SAIC MT2712, 1920x720 panel). Upstream is tested on SWI69.
+Wireless CarPlay for the MG4 head unit, with **SWI68 support** and experimental CarPlay
+features on the **instrument cluster**.
 
-Current build: **0.2.9-mg4.93**. Car-test builds install as
-`com.shihab.diplay.hudtest`, alongside any upstream `com.shihab.diplay` install.
-Run one at a time.
+DiPlay-MG4 Plus builds on two projects, and almost everything in it is their work:
+
+- [**fatihdonmezdev/DiPlay-MG4**](https://github.com/fatihdonmezdev/DiPlay-MG4) by
+  [@fatihdonmezdev](https://github.com/fatihdonmezdev): DiPlay for the MG4, tested on SWI69.
+- [**andrew-snape/DiPlay-MG4**](https://github.com/andrew-snape/DiPlay-MG4) by
+  [@andrew-snape](https://github.com/andrew-snape): the SWI165 fork (Wi-Fi audio and calls, overlay
+  video, steering wheel, dashboard directions, location, charging, dark mode, the two-pane Settings
+  and more). This repository continues from its `mg4.96` build.
+
+Current build: **0.2.9-mg4.96-swi68.10**. It installs as `com.shihab.diplay.hudtest`, the same
+package as andrew-snape's builds, so it installs over them; it can sit alongside an upstream
+`com.shihab.diplay` install. Run one at a time.
+
+## What Plus adds
+
+### SWI68 support (always on)
+
+SWI68 firmware (checked against `SWI68-29958-1300R59`) ships the same eh32 system apps as
+SWI165: launcher, media service, nFore Bluetooth, steering-wheel broadcasts, cluster map service
+and the stock AllGo CarPlay app. Plus detects SWI68 from `ro.build.mt2712.version` and gives it the
+SWI165 profile, so SWI68 cars get Wi-Fi audio, the overlay video renderer, square corners, wheel
+keys and the rest. Before, SWI68 ran as unknown firmware in Bluetooth Music mode, whose A2DP check
+opened Bluetooth settings ("connect to Bluetooth for audio") every time CarPlay started. The
+interface check is in [docs/MG4_SWI68.md](docs/MG4_SWI68.md).
+
+Also always on: in Bluetooth Music mode, a phone that is still on hands-free is no longer sent to
+Bluetooth settings (iOS drops A2DP to the car during wireless CarPlay on purpose).
+
+### Settings > Experimental
+
+Each one is off by default, on SWI68 and SWI165 only. The cluster ones use the 260 px square in
+the middle of the instrument cluster, which the head unit draws on Android display 1.
+
+| Feature | What it does | Car test |
+|---|---|---|
+| **Map on the dashboard** | CarPlay's own instrument-cluster screen (Map or Next turn) in the cluster square on the Navigation page. **Map element size** (Large, Medium, Small) asks for a larger stream and scales it into the square, so Apple Maps draws smaller | Works (2026-11-08). Overlay renderer, Medium size by default |
+| **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
+| **Song on the dashboard** | The CarPlay song (title, artist, album) on the cluster's Music page. The car's own song card only takes CarPlay from the stock AllGo apps, so Plus draws its own | Works (2026-11-08) |
+| **Album art on the song card** | The cover, from the iPhone's iAP2 artwork transfers | Works (2026-11-08) |
+| **Steering-wheel joystick for CarPlay** | Hold the centre of the right-hand joystick while CarPlay is on screen: up and down step CarPlay's highlight, left and right nudge, the centre selects. Hold again, or leave CarPlay, to get volume and tracks back. Works through an accessibility service, like MG4Control's advanced shortcuts | Works (2026-11-08) |
+
+See [CHANGELOG.md](CHANGELOG.md) (the `swi68` entries) for the details of each.
+
+## Inherited from andrew-snape/DiPlay-MG4
+
+The sections below describe the SWI165 fork this repository builds on, as its author wrote them.
+On SWI68 the same applies.
 
 ## What works on SWI165
 
@@ -56,7 +98,7 @@ The full test record is in [docs/MG4_SWI165.md](docs/MG4_SWI165.md).
 
 ## Settings
 
-On MG4, **Settings** is a two-pane screen like iOS Settings: a list of categories on the left and the chosen category on the right. It has Connection, Display, Sound, Car, Apps, General, Help and About; every setting is two taps from Home. The screen is built but not yet tried in the car. Other head units keep the upstream settings page.
+On MG4, **Settings** is a two-pane screen like iOS Settings: a list of categories on the left and the chosen category on the right. It has Connection, Display, Sound, Car, Apps, Experimental (Plus), General, Help and About; every setting is two taps from Home. The screen is built but not yet tried in the car. Other head units keep the upstream settings page.
 
 Some settings only reach a running CarPlay session after it reconnects. Those rows carry a **Reconnect** tag, and changing one while connected shows **Some changes apply after CarPlay reconnects. Reconnect now**. Dark mode at sunset, Car battery on iPhone and Video while parked take effect straight away.
 
@@ -79,7 +121,18 @@ Some settings only reach a running CarPlay session after it reconnects. Those ro
 
 Hidden on MG4 because the firmware profile sets them: audio focus, advanced audio channel mapping, and the music audio channel.
 
-## Building on a Mac
+## Building
+
+EVHardware, which upstream pulls in as the `vendor/MG4ABRP` submodule, is vendored in
+`evhardware/` here: the submodule's repository is no longer available. Skip the submodule step.
+
+**Linux:** install a JDK (21 or later) and the Android command-line tools, then
+`sdkmanager "platforms;android-37.0" "platforms;android-36" "build-tools;37.0.0" "ndk;28.2.13676358"`,
+write `sdk.dir=…` to `local.properties`, copy the identity files as below, and run
+`./scripts/build_mg4.sh` with `JAVA_HOME`, `DIPLAY_AUTH_ASSETS_DIR` and
+`MG4_PLATFORM_KEYS_DIR` (the folder with `platform.pk8` and `platform.x509.pem`) set.
+
+### On a Mac
 
 **Keep the repo out of iCloud.** If it sits in `~/Documents` with iCloud Desktop &
 Documents syncing on, iCloud makes `name 2.xml` copies of build files and the build
@@ -87,14 +140,10 @@ fails with "Duplicate resources". Either turn that syncing off, or clean before
 each build:
 
 ```bash
-./gradlew --stop && rm -rf build */build vendor/MG4ABRP/EVHardware/lib/build .gradle
+./gradlew --stop && rm -rf build */build .gradle
 ```
 
 One-time setup, from the repo folder:
-
-```bash
-git submodule update --init --recursive
-```
 
 ```bash
 echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
@@ -152,7 +201,8 @@ off; some uploads have arrived empty when copied straight away.
 
 ## Updates
 
-The in-app update check looks at **this fork's** releases (`andrew-snape/DiPlay-MG4`),
+The in-app update check looks at **this repository's** releases (`kennyvv/DiPlay-MG4-Plus`), so an
+installed Plus build is never replaced by an upstream release without SWI68 support. It checks
 when the app opens and from the ↻ button on the home screen. It offers the highest
 published release newer than the installed version, comparing only the numbers (so
 `0.2.9-mg4.92` is newer than `0.2.9-mg4.91-hud-test`), and only an `MG4CPlay-…apk` with a
@@ -173,6 +223,7 @@ FairPlay receiver.
 
 ## Documentation
 
+- [SWI68 interface check and cluster square](docs/MG4_SWI68.md): what Plus relies on in the SWI68 firmware
 - [SWI165 firmware profile and test record](docs/MG4_SWI165.md): start here
 - [Wi-Fi audio plan and car test checklist](docs/MG4_SWI165_WIFI_AUDIO_PLAN.md)
 - [Stock AllGo CarPlay app notes](docs/MG4_SWI165_ALLGO_NOTES.md): how the car's own CarPlay app handles calls and audio
@@ -185,9 +236,13 @@ FairPlay receiver.
 
 ## Source and credits
 
-Forked from [fatihdonmezdev/DiPlay-MG4](https://github.com/fatihdonmezdev/DiPlay-MG4)
-by [@fatihdonmezdev](https://github.com/fatihdonmezdev). Based on
-[xcertplay](https://github.com/shilapi/xcertplay), GPL-3.0. The home/settings UI
+DiPlay-MG4 Plus is a fork of [andrew-snape/DiPlay-MG4](https://github.com/andrew-snape/DiPlay-MG4)
+by [@andrew-snape](https://github.com/andrew-snape), itself a fork of
+[fatihdonmezdev/DiPlay-MG4](https://github.com/fatihdonmezdev/DiPlay-MG4)
+by [@fatihdonmezdev](https://github.com/fatihdonmezdev). Both are the base of everything here;
+thank you.
+
+The whole line goes back to [xcertplay](https://github.com/shilapi/xcertplay), GPL-3.0. The home/settings UI
 adapts [DiAuto](https://github.com/shihabal3amri/DiAuto), AGPL-3.0; that license is
 included in `docs/licenses`. Preserve those notices when distributing modifications.
 
@@ -197,6 +252,20 @@ The Android 9 call microphone uses [Concentus](https://github.com/lostromb/conce
 SWI165 media and steering-wheel details were read from the car's own MediaService
 APK and cross-checked against [MG4Control](https://github.com/SliDeeN/MG4Control),
 [MG4Dash](https://github.com/Skittle6938/MG4Dash) and an SWI68 launcher project.
+
+Plus also uses:
+
+- [shihabal3amri/DiPlay](https://github.com/shihabal3amri/DiPlay) (upstream DiPlay): the lane
+  guidance parser, the iAP2 artwork file-transfer receiver, the now-playing song parser and the
+  instrument-cluster stream (from its BYD cluster map), ported and adapted.
+- [SliDeeN/MG4Control](https://github.com/SliDeeN/MG4Control): where the cluster square sits on
+  display 1, that a window over it shows on the cluster, the cluster-page signal, and the
+  accessibility-service way of taking steering-wheel keys. Findings only; no code was copied.
+- [Skittle6938/DiAuto-MG4](https://github.com/Skittle6938/DiAuto-MG4): the vendored copy of
+  EVHardware (`evhardware/`), originally from
+  [fatihdonmezdev/MG4ABRP](https://github.com/fatihdonmezdev/MG4ABRP); see `evhardware/NOTICE`.
+
+SWI68 details were read from the `SWI68-29958-1300R59` OTA (system apps of the head unit).
 
 CarPlay and its icon belong to Apple Inc.; no affiliation or endorsement is implied.
 Accessory and signing keys are excluded from source archives; a car build selects

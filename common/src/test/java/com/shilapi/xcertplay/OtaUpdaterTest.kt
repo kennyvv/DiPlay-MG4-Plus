@@ -24,7 +24,7 @@ class OtaUpdaterTest {
             .put("assets", JSONArray().put(
                 JSONObject()
                     .put("name", "MG4CPlay-$tag.apk")
-                    .put("browser_download_url", "https://github.com/andrew-snape/DiPlay-MG4/releases/download/$tag/MG4CPlay-$tag.apk")
+                    .put("browser_download_url", "https://github.com/kennyvv/DiPlay-MG4-Plus/releases/download/$tag/MG4CPlay-$tag.apk")
                     .apply { if (digest != null) put("digest", "sha256:$digest") },
             ))
 
