@@ -52,4 +52,20 @@ class Mg4ClusterMapTest {
         assertEquals(4, Mg4ClusterSong.sampleSize(600, 600, 104))
         assertEquals(8, Mg4ClusterSong.sampleSize(1000, 1000, 104))
     }
+
+    @Test
+    fun aParkedWindowSitsWhereTheClusterNeverLooks() {
+        val square = Mg4ClusterSquare.placement(800, 480)
+        val (x, y) = Mg4ClusterSquare.hiddenPosition(Mg4ClusterSquare.Hide.PARK, square.x, square.y)
+        // On the display, clear of the square: no overlap on x.
+        assertTrue(x >= 0 && y >= 0)
+        assertTrue(x + square.side <= square.x)
+        assertEquals(square.x to square.y, Mg4ClusterSquare.hiddenPosition(Mg4ClusterSquare.Hide.TRANSPARENT, square.x, square.y))
+    }
+
+    @Test
+    fun theOverlayMapParksAndTheTextureMapFades() {
+        assertEquals(Mg4ClusterSquare.Hide.PARK, Mg4ClusterMap.Renderer.SURFACE.hide)
+        assertEquals(Mg4ClusterSquare.Hide.TRANSPARENT, Mg4ClusterMap.Renderer.TEXTURE.hide)
+    }
 }

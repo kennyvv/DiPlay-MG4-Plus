@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.9 (test build for SWI68 and SWI165). Not yet tried in the car.
+
+- **Map renderer setting.** Experimental row next to the map: Overlay (default) or Texture. Overlay is the SurfaceView the map was first seen working with; since its layer ignores window transparency, it hides by parking in the display's top-left corner, which the cluster never shows (it takes only the square). Texture is the TextureView from swi68.8, hiding by transparency in place. The song card and lane strip keep hiding by transparency.
+
 mg4.96-swi68.8 (test build for SWI68 and SWI165). Fixes from the first car test (2026-11-08): album art, map, song card and wheel control all worked.
 
 - **Song card drew over the navigation page.** Cluster windows were hidden by moving them off the display, but Android pulls such a window back to the edge (x 540 on the 800 px display, beside the square at 482), so the song card stayed visible over the map. Hidden windows now stay on the square and turn fully transparent. The map draws on a TextureView, since a SurfaceView's layer ignores window transparency.

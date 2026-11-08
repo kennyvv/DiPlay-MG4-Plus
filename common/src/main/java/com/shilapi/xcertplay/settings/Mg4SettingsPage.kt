@@ -401,6 +401,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
         SettingRow.CLUSTER_MAP -> R.string.mg4_cluster_map
         SettingRow.CLUSTER_MAP_SIZE -> R.string.mg4_cluster_map_size
+        SettingRow.CLUSTER_MAP_RENDERER -> R.string.mg4_cluster_map_renderer
         SettingRow.CLUSTER_LANES -> R.string.mg4_cluster_lanes
         SettingRow.CLUSTER_SONG -> R.string.mg4_cluster_song
         SettingRow.CLUSTER_ALBUM_ART -> R.string.mg4_cluster_album_art
@@ -505,6 +506,13 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                         listOf(R.string.mg4_cluster_map_size_large, R.string.mg4_cluster_map_size_medium, R.string.mg4_cluster_map_size_small).map(activity::getString),
                         sizes.indexOf(AirPlayPersistence.loadClusterMapSize(activity)),
                     ) { AirPlayPersistence.saveClusterMapSize(activity, sizes[it]) }
+                }
+                SettingRow.CLUSTER_MAP_RENDERER -> {
+                    val renderers = com.shilapi.xcertplay.Mg4ClusterMap.Renderer.entries
+                    segmented(
+                        listOf(R.string.mg4_cluster_map_renderer_surface, R.string.mg4_cluster_map_renderer_texture).map(activity::getString),
+                        renderers.indexOf(AirPlayPersistence.loadClusterMapRenderer(activity)),
+                    ) { AirPlayPersistence.saveClusterMapRenderer(activity, renderers[it]) }
                 }
                 SettingRow.CLUSTER_LANES -> {
                     val modes = AirPlayPersistence.LaneGuidance.entries
