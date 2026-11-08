@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.96-swi68.10 (test build for SWI68 and SWI165).
+
+- **Map renderer setting removed.** The overlay SurfaceView looked clearly better in the car and performs fine (2026-11-08), so it is the only renderer again, hiding by parking where the cluster never looks. The TextureView option from swi68.8-9 is gone.
+
 mg4.96-swi68.9 (test build for SWI68 and SWI165). Not yet tried in the car.
 
 - **Map renderer setting.** Experimental row next to the map: Overlay (default) or Texture. Overlay is the SurfaceView the map was first seen working with; since its layer ignores window transparency, it hides by parking in the display's top-left corner, which the cluster never shows (it takes only the square). Texture is the TextureView from swi68.8, hiding by transparency in place. The song card and lane strip keep hiding by transparency.

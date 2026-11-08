@@ -1,11 +1,9 @@
 package com.shilapi.xcertplay
 
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import android.view.TextureView
 import android.view.View
 import android.widget.FrameLayout
 import com.shilapi.xcertplay.media.AndroidMediaSink
@@ -17,18 +15,13 @@ import com.shilapi.xcertplay.media.AndroidMediaSink
  * The map covers the square only while the cluster shows its Navigation page, so the Music page
  * keeps the car's own song card (or [Mg4ClusterSong]); when the page is unreadable, the map stays.
  * The video buffer is the stream size, scaled into the square, so a larger stream draws Apple Maps
- * smaller. Two renderers ([Renderer]): the hardware overlay layer of a SurfaceView, as the map was
- * first seen working in the car, or a GPU-composited TextureView.
+ * smaller. It is a SurfaceView on the hardware overlay layer, like the stock CarPlay app; a
+ * TextureView was tried (swi68.8-9) and looked flatter in the car. A SurfaceView's layer ignores
+ * window transparency, so the map hides by parking where the cluster never looks
+ * ([Mg4ClusterSquare.Hide.PARK]).
  */
 internal object Mg4ClusterMap {
     private const val SCREEN_TYPE_ALT = 111
-
-    enum class Renderer(val hide: Mg4ClusterSquare.Hide) {
-        /** Overlay layer, the stock look; a SurfaceView ignores window alpha, so it hides by parking. */
-        SURFACE(Mg4ClusterSquare.Hide.PARK),
-        /** GPU composited (can look flatter, needs hardware acceleration); hides by transparency in place. */
-        TEXTURE(Mg4ClusterSquare.Hide.TRANSPARENT),
-    }
 
     /** Show the map on the Navigation page, or whenever the page cannot be read. */
     fun visibleOn(tab: Int?): Boolean = tab == null || tab == Mg4ClusterSquare.TAB_NAVIGATION
@@ -41,7 +34,7 @@ internal object Mg4ClusterMap {
     val isShown: Boolean get() = square != null
 
     /** Puts the square on the cluster and feeds it [sink]'s cluster stream of [streamSide] px. Main thread. */
-    fun attach(context: Context, sink: AndroidMediaSink, streamSide: Int, renderer: Renderer, log: (String) -> Unit) {
+    fun attach(context: Context, sink: AndroidMediaSink, streamSide: Int, log: (String) -> Unit) {
         this.log = log
         if (this.sink !== sink) {
             this.sink = sink
@@ -53,18 +46,14 @@ internal object Mg4ClusterMap {
                 "MG4CPlay cluster map",
                 ::visibleOn,
                 { this.log("Cluster map: $it") },
-                hide = renderer.hide,
+                hide = Mg4ClusterSquare.Hide.PARK,
             ) { display ->
                 FrameLayout(display).apply {
                     setBackgroundColor(Mg4ClusterSquare.BACKGROUND)
-                    val video = when (renderer) {
-                        Renderer.SURFACE -> surfaceVideo(display, streamSide)
-                        Renderer.TEXTURE -> textureVideo(display, streamSide)
-                    }
-                    addView(video, FrameLayout.LayoutParams(-1, -1))
+                    addView(surfaceVideo(display, streamSide), FrameLayout.LayoutParams(-1, -1))
                 }
             }
-            this.log("Cluster map: renderer=$renderer stream=${streamSide}x$streamSide")
+            this.log("Cluster map: stream ${streamSide}x$streamSide")
         }
     }
 
@@ -97,25 +86,5 @@ internal object Mg4ClusterMap {
 
             override fun surfaceDestroyed(holder: SurfaceHolder) = onSurface(null, "")
         })
-    }
-
-    private fun textureVideo(context: Context, streamSide: Int): View = TextureView(context).apply {
-        surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-            override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
-                texture.setDefaultBufferSize(streamSide, streamSide)
-                onSurface(Surface(texture), "texture ${streamSide}x$streamSide in ${width}x$height")
-            }
-
-            override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) = Unit
-
-            override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
-                val previous = surface
-                onSurface(null, "")
-                previous?.release()
-                return true
-            }
-
-            override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
-        }
     }
 }

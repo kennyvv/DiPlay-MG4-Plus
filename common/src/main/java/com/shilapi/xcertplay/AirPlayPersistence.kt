@@ -46,7 +46,6 @@ object AirPlayPersistence {
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
     private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
     private const val KEY_CLUSTER_MAP_SIZE = "mg4_cluster_map_size"
-    private const val KEY_CLUSTER_MAP_RENDERER = "mg4_cluster_map_renderer"
     private const val KEY_CLUSTER_SONG = "mg4_cluster_song"
     private const val KEY_CLUSTER_ALBUM_ART = "mg4_cluster_album_art"
     private const val KEY_CLUSTER_LANES = "mg4_cluster_lanes"
@@ -220,18 +219,6 @@ object AirPlayPersistence {
     fun saveClusterMapSize(context: Context, size: com.shilapi.xcertplay.airplay.CarPlayClusterDisplay.Size) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_CLUSTER_MAP_SIZE, size.name)
-            .apply()
-    }
-
-    /** How the cluster map is drawn; the overlay SurfaceView by default. */
-    internal fun loadClusterMapRenderer(context: Context): Mg4ClusterMap.Renderer {
-        val name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLUSTER_MAP_RENDERER, null)
-        return Mg4ClusterMap.Renderer.entries.firstOrNull { it.name == name } ?: Mg4ClusterMap.Renderer.SURFACE
-    }
-
-    internal fun saveClusterMapRenderer(context: Context, renderer: Mg4ClusterMap.Renderer) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(KEY_CLUSTER_MAP_RENDERER, renderer.name)
             .apply()
     }
 

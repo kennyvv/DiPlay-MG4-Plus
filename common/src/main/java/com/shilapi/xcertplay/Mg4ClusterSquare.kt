@@ -43,7 +43,7 @@ internal class Mg4ClusterSquare private constructor(
 
     /** How a window hides when its page is not showing. */
     enum class Hide {
-        /** Fully transparent in place. Does not work for a SurfaceView, whose layer ignores window alpha. */
+        /** Fully transparent in place, for windows without video. A SurfaceView's layer ignores window alpha. */
         TRANSPARENT,
         /**
          * Moved to the display's top-left corner, which the cluster never shows (it takes only the

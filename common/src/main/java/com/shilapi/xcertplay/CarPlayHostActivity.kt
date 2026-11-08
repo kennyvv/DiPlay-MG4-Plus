@@ -3119,10 +3119,7 @@ class CarPlayHostActivity : ComponentActivity() {
             onScreenStreamStateChanged(restartGeneration, type, active)
         }
         if (Mg4ClusterMap.isShown) {
-            Mg4ClusterMap.attach(
-                this, snapshot.sink, AirPlayPersistence.loadClusterMapSize(this).sidePixels,
-                AirPlayPersistence.loadClusterMapRenderer(this), ::appendLog,
-            )
+            Mg4ClusterMap.attach(this, snapshot.sink, AirPlayPersistence.loadClusterMapSize(this).sidePixels, ::appendLog)
         }
         CarPlayWheel.controller = snapshot.controller
         CarPlayWheel.log = ::appendLog
@@ -3205,7 +3202,7 @@ class CarPlayHostActivity : ComponentActivity() {
         runOnUiThread {
             val cluster = airPlayConfig.cluster
             if (cluster != null) {
-                Mg4ClusterMap.attach(this, renderer, cluster.widthPixels, AirPlayPersistence.loadClusterMapRenderer(this), ::appendLog)
+                Mg4ClusterMap.attach(this, renderer, cluster.widthPixels, ::appendLog)
             } else {
                 Mg4ClusterMap.detach()
             }

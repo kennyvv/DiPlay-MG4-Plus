@@ -62,10 +62,4 @@ class Mg4ClusterMapTest {
         assertTrue(x + square.side <= square.x)
         assertEquals(square.x to square.y, Mg4ClusterSquare.hiddenPosition(Mg4ClusterSquare.Hide.TRANSPARENT, square.x, square.y))
     }
-
-    @Test
-    fun theOverlayMapParksAndTheTextureMapFades() {
-        assertEquals(Mg4ClusterSquare.Hide.PARK, Mg4ClusterMap.Renderer.SURFACE.hide)
-        assertEquals(Mg4ClusterSquare.Hide.TRANSPARENT, Mg4ClusterMap.Renderer.TEXTURE.hide)
-    }
 }
