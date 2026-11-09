@@ -127,7 +127,8 @@ internal class MicrophoneUplink(
                 TAG,
                 "microphone uplink started type=${config.audioType} " +
                     "rate=${config.sampleRate} channels=${config.channels} " +
-                    "frameMs=${config.frameMillis} port=${config.port}",
+                    "frameMs=${config.frameMillis} port=${config.port} " +
+                    "rtpClock=${config.rtpClockRate} tsStep=${config.rtpTimestampStep}",
             )
             true
         } catch (error: Exception) {
@@ -258,7 +259,7 @@ internal class MicrophoneUplink(
                 socket = socket,
                 counters = counters,
                 body = body,
-                samples = config.samplesPerPacket,
+                samples = config.rtpTimestampStep,
             )
         }
     }

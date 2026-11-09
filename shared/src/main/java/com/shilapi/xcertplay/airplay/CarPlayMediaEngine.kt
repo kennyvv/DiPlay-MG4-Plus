@@ -134,12 +134,13 @@ class CarPlayMediaEngine(
             type,
             audioType,
         )
-        Log.i(
-            TAG,
-            "airplay audio format type=$type audioType=$audioType codec=${format.codec} " +
-                "rate=${format.sampleRate} channels=${format.channels} " +
-                "micPort=${(stream["dataPort"] as? Number)?.toInt() ?: 0}",
-        )
+        val formatBits = (stream["audioFormat"] as? Number)?.toLong() ?: 0L
+        val formatSummary = "airplay audio format type=$type audioType=$audioType " +
+            "audioFormat=0x${java.lang.Long.toHexString(formatBits)} codec=${format.codec} " +
+            "rate=${format.sampleRate} rtpClock=${format.rtpClockRate} channels=${format.channels} " +
+            "micPort=${(stream["dataPort"] as? Number)?.toInt() ?: 0}"
+        Log.i(TAG, formatSummary)
+        session.logDebug(formatSummary)
         val connectionId = stream["streamConnectionID"]
         val latencyMs = (stream["audioLatencyMs"] as? Number)?.toInt() ?: 0
         val meta = AudioMeta(type, format, connectionId, latencyMs)
@@ -416,6 +417,7 @@ class CarPlayMediaEngine(
             key = key,
             codec = format.codec,
             bitrate = if (format.codec == AudioCodecKind.OPUS) opusBitrate else null,
+            rtpClockRate = format.rtpClockRate,
         )
     }
 

@@ -302,7 +302,9 @@ class AndroidMediaSink(
         onAudioDiagnostic(
             "Microphone ${config.audioType}: ${if (started) "started" else "failed"} " +
                 "source=${uplink.sourceUsed} codec=${config.codec} rate=${config.sampleRate} " +
-                "channels=${config.channels} frameMs=${config.frameMillis}",
+                "channels=${config.channels} frameMs=${config.frameMillis} " +
+                "rtpClock=${config.rtpClockRate} tsStep=${config.rtpTimestampStep}" +
+                (config.bitrate?.let { " bitrate=$it" } ?: ""),
         )
         if (!started) microphoneUplinks.remove(id, uplink)
     }

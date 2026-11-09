@@ -66,6 +66,7 @@ On SWI68 the same applies.
 | Hands-free released during CarPlay | Working (mg4.80); released again on each reconnect (mg4.81) |
 | Square corners | Confirmed in the car (mg4.70), default since mg4.75 |
 | Siri and Maps voice prompts | Siri audio clean in mg4.71 test; Maps voice prompts not yet tested |
+| Siri hears you | Fixed in mg4.97 (test build), not yet tried in the car. The microphone now counts its RTP clock at the rate Siri negotiates (24 kHz), so speech has no gaps |
 | Instrument-cluster directions | Test build (mg4.80), not yet confirmed in the car |
 | Bluetooth Music mode (fallback) | Fix in mg4.66, awaiting a car test |
 | Car GPS and wheel speed to the iPhone | Test build (mg4.90): location on by default on MG4, with the car's own speed for tunnels (no adb). Not yet tested in the car |

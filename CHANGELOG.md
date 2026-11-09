@@ -1,5 +1,9 @@
 # Unreleased (SWI165 fork)
 
+mg4.97 (test build). Not yet tried in the car: test plan D2c, D2d.
+
+- **Siri microphone fix.** The microphone's RTP clock always counted at 48 kHz, so when the iPhone asks for Opus at 24 kHz (usual for Siri) or 16 kHz (usual for calls), each 20 ms packet claimed to be 40 ms or 60 ms long and the iPhone heard speech full of gaps. The microphone now counts at the negotiated rate (the same fix upstream #644 made for playback). The 2026-11-04 report showed the microphone sending clean audio at a good level on all three sources, and Siri still failing on each. Calls get the same fix; check callers still hear you clearly. The log now shows `airplay audio format ... audioFormat=0x... rtpClock=` and the microphone line ends with `rtpClock= tsStep=`.
+
 mg4.96-swi68.11, the first DiPlay-MG4 Plus release.
 
 - **Updates come from this repository.** The in-app update check reads releases of `kennyvv/DiPlay-MG4-Plus` instead of `andrew-snape/DiPlay-MG4`, so a Plus install is never offered an upstream build without SWI68 support. Earlier swi68 builds still check andrew-snape's releases; install this one by hand.

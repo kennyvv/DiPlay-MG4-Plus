@@ -14,7 +14,10 @@ data class MicrophoneConfig(
     val key: ByteArray,
     val codec: AudioCodecKind = AudioCodecKind.LPCM,
     val bitrate: Int? = null,
+    /** The RTP clock the iPhone negotiated (16, 24 or 48 kHz for Opus). Defaults to the PCM sample rate. */
+    val rtpClockRate: Int = sampleRate,
 ) {
+    /** Samples in one captured frame. Opus is captured and encoded at 48 kHz, so this is 960 for 20 ms. */
     val samplesPerPacket: Int
         get() = if (codec == AudioCodecKind.OPUS) {
             OPUS_SAMPLES_PER_PACKET
@@ -24,6 +27,19 @@ data class MicrophoneConfig(
 
     val frameBytes: Int
         get() = samplesPerPacket * channels * 2
+
+    /**
+     * How far each packet advances the RTP timestamp, on the [rtpClockRate] clock. Opus is captured and
+     * encoded at 48 kHz, but the iPhone counts its RTP timestamps at the negotiated audioFormat rate (24 kHz for
+     * Siri, 16 kHz for calls), so a 20 ms packet advances 480 or 320 there, not 960. Advancing by 960 made each
+     * packet claim 40 ms or 60 ms and left gaps in the speech. Upstream DiPlay #644 fixed the same thing for playback.
+     */
+    val rtpTimestampStep: Int
+        get() = if (codec == AudioCodecKind.OPUS) {
+            maxOf(1, rtpClockRate * frameMillis / 1000)
+        } else {
+            samplesPerPacket
+        }
 
     companion object {
         private const val OPUS_SAMPLES_PER_PACKET = 960

@@ -42,6 +42,76 @@ class MicrophonePacketizerTest {
         assertEquals(1L, counters.nonce)
     }
 
+    private fun opusConfig(rtpClockRate: Int) = MicrophoneConfig(
+        audioType = "speechrecognition",
+        sampleRate = 48_000,
+        channels = 1,
+        payloadType = 100,
+        frameMillis = 20,
+        host = InetAddress.getLoopbackAddress(),
+        port = 7000,
+        key = ByteArray(32),
+        codec = AudioCodecKind.OPUS,
+        bitrate = 64_000,
+        rtpClockRate = rtpClockRate,
+    )
+
+    @Test
+    fun opusTimestampStepFollowsNegotiatedRtpClock() {
+        assertEquals(320, opusConfig(16_000).rtpTimestampStep)
+        assertEquals(480, opusConfig(24_000).rtpTimestampStep)
+        assertEquals(960, opusConfig(48_000).rtpTimestampStep)
+
+        // Capture stays at 48 kHz: 960 samples and 1,920 bytes of mono PCM per 20 ms frame.
+        val config = opusConfig(24_000)
+        assertEquals(960, config.samplesPerPacket)
+        assertEquals(1920, config.frameBytes)
+    }
+
+    @Test
+    fun rtpClockDefaultsToSampleRate() {
+        val config = MicrophoneConfig(
+            audioType = "telephony",
+            sampleRate = 16_000,
+            channels = 1,
+            payloadType = 100,
+            frameMillis = 20,
+            host = InetAddress.getLoopbackAddress(),
+            port = 7000,
+            key = ByteArray(32),
+        )
+        assertEquals(16_000, config.rtpClockRate)
+        assertEquals(320, config.rtpTimestampStep)
+    }
+
+    @Test
+    fun pcmTimestampStepIsSamplesPerPacket() {
+        val config = MicrophoneConfig(
+            audioType = "speechrecognition",
+            sampleRate = 24_000,
+            channels = 1,
+            payloadType = 100,
+            frameMillis = 20,
+            host = InetAddress.getLoopbackAddress(),
+            port = 7000,
+            key = ByteArray(32),
+        )
+        assertEquals(480, config.rtpTimestampStep)
+        assertEquals(config.samplesPerPacket, config.rtpTimestampStep)
+    }
+
+    @Test
+    fun opusPacketsAdvanceTimestampByNegotiatedStep() {
+        val config = opusConfig(24_000)
+        val counters = MicrophoneCounters()
+        val body = ByteArray(40)
+
+        MicrophonePacketizer.sealPacket(config.key, config.payloadType, counters, body, config.rtpTimestampStep)
+        assertEquals(480, counters.timestamp)
+        MicrophonePacketizer.sealPacket(config.key, config.payloadType, counters, body, config.rtpTimestampStep)
+        assertEquals(960, counters.timestamp)
+    }
+
     @Test
     fun pcmIsConvertedToBigEndian() {
         assertArrayEquals(
