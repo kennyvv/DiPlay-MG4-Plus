@@ -47,6 +47,8 @@ data class AirPlayConfig(
     val microphone: Boolean = false,
     /** Offer Opus for microphone input; false where the head unit has no Opus encoder. */
     val microphoneOpus: Boolean = true,
+    /** Test (mg4.98): false offers only PCM for Siri's microphone, taking the Opus encoder out of that path. */
+    val siriMicrophoneOpus: Boolean = true,
     val manufacturer: String = "xcertplay",
     val model: String = "xcertplay",
     val oemLabel: String = "xcertplay",

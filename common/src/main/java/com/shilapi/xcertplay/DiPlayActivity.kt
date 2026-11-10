@@ -1170,6 +1170,11 @@ class DiPlayActivity : ComponentActivity() {
         appendLine("Session: ${if (CarPlayBackgroundSession.active) "active" else if (CarPlayBackgroundSession.hasSession()) "connecting" else "stopped"}")
         appendLine("Head-unit board: ${Build.BOARD}; hardware: ${Build.HARDWARE}; build: ${Build.DISPLAY}")
         if (Mg4FirmwareProfile.detect().isMg4) appendLine("Day/night: ${DayNightProbe.snapshot(appContext)}")
+        appendLine(
+            "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(appContext)) "PCM" else "Opus"} " +
+                "recording=${if (AirPlayPersistence.loadMicrophoneRecording(appContext)) "on" else "off"} " +
+                "recordings=${MicRecordings.files(appContext).joinToString(",") { "${it.name}(${it.length()})" }.ifEmpty { "none" }}",
+        )
         com.shilapi.xcertplay.settings.SettingsChangeLog.lines(appContext).takeIf { it.isNotEmpty() }?.let { lines ->
             appendLine("--- Settings changes (newest last) ---")
             lines.forEach(::appendLine)
@@ -1267,10 +1272,15 @@ class DiPlayActivity : ComponentActivity() {
         Thread({
             var server: ReportDownloadServer? = null
             val result = runCatching {
-                val body = buildDiagnosticReport(appContext).toByteArray(Charsets.UTF_8)
-                ReportDownloadServer(address, fileName, body,
+                val report = buildDiagnosticReport(appContext).toByteArray(Charsets.UTF_8)
+                // mg4.98: microphone test recordings travel with the report, as one zip.
+                val recordings = MicRecordings.files(appContext)
+                val bundled = recordings.isNotEmpty()
+                val body = if (bundled) MicRecordings.zip(fileName, report, recordings) else report
+                ReportDownloadServer(address, if (bundled) fileName.removeSuffix(".txt") + ".zip" else fileName, body,
                     log = { message -> Log.i("DiPlay", message); controller?.logDiagnostic(message) },
                     onFinished = { outcome -> runOnUiThread { server?.let { onReportDownloadFinished(it, outcome) } } },
+                    contentType = if (bundled) "application/zip" else "text/plain; charset=utf-8",
                 ).also { server = it }
             }
             runOnUiThread {

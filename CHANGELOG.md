@@ -1,5 +1,16 @@
 # Unreleased (SWI165 fork)
 
+mg4.98 (test build). Microphone tests for Siri dictation and calls. Not yet tried in the car: test plan D2c to D2h.
+
+- **Why.** Siri hears you but writes the wrong words, and nobody has confirmed callers can hear you. The audio reaches the iPhone on time and at a good level, so this build finds out whether the fault is the timing (fixed in mg4.97, also untested), the Opus encoding or the car's microphone itself.
+- **Record microphone (test).** Settings > Sound. Off by default. Keeps the first 10 seconds of each Siri request and each call as a WAV on the car, taken before encoding (the newest 8). **Download to iPhone** then sends one zip with the report and the recordings, so you can listen to what Siri and callers were sent. Turning it off deletes them. The log shows `Microphone <type> recording saved file= bytes=`.
+- **Siri microphone as PCM (test).** Settings > Sound. Off by default, applies after a reconnect. Offers Siri plain audio only, so the software Opus encoder is out of the path; calls keep Opus. The log shows `Microphone speechrecognition: started ... codec=LPCM`. If CarPlay loses sound with it on, turn it off: removing Opus from every microphone format did that in mg4.67.
+- **Noise floor.** Each `Microphone ... stats` line now ends with `floorDb=`, the quietest 20 ms in the window. If it sits close to `rmsDb`, the cabin is never quiet enough for Siri to hear the end of speech.
+- The log and report have a `Microphone test: siriFormat= recording=` line.
+- **Other languages removed.** The Simplified Chinese, Arabic, Russian and Spanish translations were about 130 strings behind English and unchecked, so the app is now English only. The **Language** row (Settings > General) and the App language button in the CarPlay menu are gone. A saved language choice is ignored.
+
+mg4.97 (test build). Siri microphone fix. Not yet tried in the car: test plan D2c, D2d.
+
 mg4.97 (test build). Not yet tried in the car: test plan D2c, D2d.
 
 - **Siri microphone fix.** The microphone's RTP clock always counted at 48 kHz, so when the iPhone asks for Opus at 24 kHz (usual for Siri) or 16 kHz (usual for calls), each 20 ms packet claimed to be 40 ms or 60 ms long and the iPhone heard speech full of gaps. The microphone now counts at the negotiated rate (the same fix upstream #644 made for playback). The 2026-11-04 report showed the microphone sending clean audio at a good level on all three sources, and Siri still failing on each. Calls get the same fix; check callers still hear you clearly. The log now shows `airplay audio format ... audioFormat=0x... rtpClock=` and the microphone line ends with `rtpClock= tsStep=`.

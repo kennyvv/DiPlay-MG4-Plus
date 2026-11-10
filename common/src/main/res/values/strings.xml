@@ -200,6 +200,9 @@
     <string name="microphone_source_automatic">Automatic · default</string>
     <string name="microphone_source_voice">Call processing for calls and Siri</string>
     <string name="microphone_source_plain">Plain microphone</string>
+    <string name="siri_microphone_pcm">Siri microphone as PCM (test)</string>
+    <string name="microphone_recording">Record microphone (test)</string>
+    <string name="settings_footer_microphone">For comparing how well Siri and callers hear you. PCM sends Siri plain audio instead of Opus; if CarPlay loses sound, turn it off. Record microphone keeps the first 10 seconds of each Siri request and call on the car and adds them to Download to iPhone. Turning it off deletes them.</string>
     <string name="mg4_cluster_directions">Directions on the dashboard (test)</string>
     <string name="mg4_sunset_dark_mode">Dark mode at sunset</string>
     <string name="mg4_sunset_dark_mode_description">Switches CarPlay to dark between sunset and sunrise, worked out from the car’s position and the clock. Off (the default) follows the car’s own day/night, which changes with the headlights.</string>

@@ -44,6 +44,8 @@ internal class MicrophoneUplink(
     private var bytesSent = 0L
     // Input level, to tell a quiet or clipping microphone from a network problem (Siri, 2026-11-03).
     private val level = MicrophoneLevel()
+    // Test recording of what is sent (mg4.98); only touched on the capture thread.
+    private var recording: WavWriter? = null
     private val running = AtomicBoolean(false)
     private val firstPacketLogged = AtomicBoolean(false)
     @Volatile private var recorder: AudioRecord? = null
@@ -179,6 +181,7 @@ internal class MicrophoneUplink(
         val readBuffer = ByteArray(maxOf(frame.size, MIN_READ_BYTES))
         val counters = MicrophoneCounters()
         var filled = 0
+        recording = MicrophoneRecording.open(config.audioType, config.sampleRate, config.channels)
         try {
             while (running.get()) {
                 val readStarted = System.nanoTime()
@@ -207,6 +210,13 @@ internal class MicrophoneUplink(
             if (running.get()) Log.e(TAG, "microphone capture failed", error)
         } finally {
             reportStats(force = true)
+            recording?.let { saved ->
+                recording = null
+                saved.close()
+                runCatching {
+                    report("Microphone ${config.audioType} recording saved file=${saved.file.name} bytes=${saved.dataBytes}")
+                }
+            }
             running.set(false)
             release()
         }
@@ -242,6 +252,7 @@ internal class MicrophoneUplink(
 
     private fun sendFrame(socket: DatagramSocket, counters: MicrophoneCounters, frame: ByteArray) {
         level.add(frame)
+        recording?.write(frame)
         val encodeStarted = System.nanoTime()
         val bodies = if (config.codec == AudioCodecKind.OPUS) {
             opusEncoder?.encode(frame).orEmpty()
@@ -354,24 +365,32 @@ internal class MicrophoneLevel {
     private var sumSquares = 0.0
     private var samples = 0L
     private var clipped = 0L
+    // RMS of the quietest frame: the noise floor Siri has to hear the end of speech against.
+    private var floor = Double.MAX_VALUE
 
     fun add(frame: ByteArray) {
         var index = 0
+        var frameSquares = 0.0
+        var frameSamples = 0
         while (index + 1 < frame.size) {
             val sample = (frame[index].toInt() and 0xff) or (frame[index + 1].toInt() shl 8)
             val magnitude = kotlin.math.abs(sample)
             if (magnitude > peak) peak = magnitude
             if (magnitude >= 32_767) clipped++
-            sumSquares += sample.toDouble() * sample
-            samples++
+            frameSquares += sample.toDouble() * sample
+            frameSamples++
             index += 2
         }
+        if (frameSamples == 0) return
+        sumSquares += frameSquares
+        samples += frameSamples
+        floor = minOf(floor, kotlin.math.sqrt(frameSquares / frameSamples))
     }
 
     fun summary(): String {
         if (samples == 0L) return "level=none"
         val rms = kotlin.math.sqrt(sumSquares / samples)
-        return "peakDb=${dbfs(peak.toDouble())} rmsDb=${dbfs(rms)} clipped=$clipped"
+        return "peakDb=${dbfs(peak.toDouble())} rmsDb=${dbfs(rms)} clipped=$clipped floorDb=${dbfs(floor)}"
     }
 
     fun reset() {
@@ -379,6 +398,7 @@ internal class MicrophoneLevel {
         sumSquares = 0.0
         samples = 0
         clipped = 0
+        floor = Double.MAX_VALUE
     }
 
     private fun dbfs(value: Double): String =

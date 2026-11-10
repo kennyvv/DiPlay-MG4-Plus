@@ -46,7 +46,9 @@ object AirPlayInfoPlist {
         )
         if (!config.disableAudioOutput) {
             info["audioLatencies"] = audioLatencies()
-            info["audioFormats"] = audioFormats(config.entertainmentSampleRate, config.microphone, config.microphoneOpus)
+            info["audioFormats"] = audioFormats(
+                config.entertainmentSampleRate, config.microphone, config.microphoneOpus, config.siriMicrophoneOpus,
+            )
         }
         info["extendedFeatures"] = listOf("vocoderInfo", "enhancedRequestCarUI")
         info["displays"] = displays
@@ -120,6 +122,7 @@ object AirPlayInfoPlist {
         entertainmentRate: Int,
         microphone: Boolean,
         microphoneOpus: Boolean = true,
+        siriMicrophoneOpus: Boolean = true,
     ): List<Map<String, Any?>> {
         fun format(type: Int, audioType: String, outputFormats: Int, inputFormats: Int? = null): Map<String, Any?> {
             val entry = linkedMapOf<String, Any?>(
@@ -140,6 +143,8 @@ object AirPlayInfoPlist {
         val pcmInput = if (microphone) pcmMono else null
         // Without an Opus encoder the iPhone must send PCM to the microphone uplink.
         val wirelessInput = if (microphone) pcmMono or (if (microphoneOpus) opus else 0) else null
+        // Test (mg4.98): Siri's microphone alone can be offered as PCM only; calls keep Opus.
+        val siriInput = if (siriMicrophoneOpus) wirelessInput else pcmInput
 
         return listOf(
             format(100, "compatibility", pcm, pcmInput),
@@ -148,7 +153,7 @@ object AirPlayInfoPlist {
             format(100, "alert", pcm or opus),
             format(100, "media", pcm),
             format(100, "telephony", pcmMono or opus, wirelessInput),
-            format(100, "speechRecognition", pcmMono or opus, wirelessInput),
+            format(100, "speechRecognition", pcmMono or opus, siriInput),
             format(101, "default", pcm or opus),
             format(102, "media", aacLc),
         )

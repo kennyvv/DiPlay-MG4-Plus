@@ -90,6 +90,7 @@ internal class ReportDownloadServer(
     private val onFinished: (Result) -> Unit,
     private val lifetimeMillis: Long = LIFETIME_MILLIS,
     random: SecureRandom = SecureRandom(),
+    private val contentType: String = "text/plain; charset=utf-8",
 ) : Closeable {
     enum class Result { SERVED, EXPIRED, CLOSED, FAILED }
 
@@ -174,7 +175,7 @@ internal class ReportDownloadServer(
 
     private fun reportHead() = ReportDownloadHttp.head(
         "200 OK", body.size,
-        "Content-Type: text/plain; charset=utf-8",
+        "Content-Type: $contentType",
         "Content-Disposition: attachment; filename=$fileName",
     )
 

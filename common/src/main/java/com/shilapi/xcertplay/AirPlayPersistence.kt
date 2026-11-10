@@ -42,6 +42,8 @@ object AirPlayPersistence {
     private const val KEY_PLAIN_DISPLAY = "plain_display_area"
     private const val KEY_CALLS_CARPLAY_ONLY = "calls_over_carplay_only"
     private const val KEY_MIC_SOURCE = "microphone_source"
+    private const val KEY_SIRI_MIC_PCM = "siri_microphone_pcm"
+    private const val KEY_MIC_RECORDING = "microphone_recording"
     private const val KEY_VIDEO_COLOUR_RANGE = "video_colour_range"
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
     private const val KEY_CLUSTER_MAP = "mg4_cluster_map"
@@ -293,6 +295,22 @@ object AirPlayPersistence {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putInt(KEY_MIC_SOURCE, choice)
             .apply()
+    }
+
+    /** Test (mg4.98): offer Siri's microphone as PCM only, without Opus. Off by default. */
+    fun loadSiriMicrophonePcm(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_SIRI_MIC_PCM, false)
+
+    fun saveSiriMicrophonePcm(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_SIRI_MIC_PCM, enabled).apply()
+    }
+
+    /** Test (mg4.98): save the first seconds of each Siri request and call as a WAV. Off by default. */
+    fun loadMicrophoneRecording(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MIC_RECORDING, false)
+
+    fun saveMicrophoneRecording(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MIC_RECORDING, enabled).apply()
     }
 
     /**

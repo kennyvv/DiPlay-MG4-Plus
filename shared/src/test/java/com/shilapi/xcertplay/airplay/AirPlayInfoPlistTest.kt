@@ -96,6 +96,18 @@ class AirPlayInfoPlistTest {
         val pcmOnly = telephonyInput(AirPlayInfoPlist.build(base.copy(microphoneOpus = false)))
         assertEquals(0, pcmOnly and opus)
         assertTrue(pcmOnly != 0)
+
+        // mg4.98 test switch: Siri's microphone as PCM only, calls still on Opus.
+        fun siriInput(info: Map<String, Any?>): Int {
+            val formats = info["audioFormats"] as List<*>
+            val siri = formats.map { it as Map<*, *> }.first { it["audioType"] == "speechRecognition" }
+            return siri["audioInputFormats"] as Int
+        }
+        assertTrue(siriInput(AirPlayInfoPlist.build(base)) and opus != 0)
+        val siriPcm = AirPlayInfoPlist.build(base.copy(siriMicrophoneOpus = false))
+        assertEquals(0, siriInput(siriPcm) and opus)
+        assertTrue(siriInput(siriPcm) != 0)
+        assertTrue(telephonyInput(siriPcm) and opus != 0)
     }
 
     @Test
