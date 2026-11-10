@@ -3,6 +3,7 @@ package com.shilapi.xcertplay.media
 import android.media.AudioFormat as AndroidAudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
 import android.util.Log
 import com.shilapi.xcertplay.airplay.AudioCodecKind
 import com.shilapi.xcertplay.airplay.MicrophoneConfig
@@ -49,6 +50,7 @@ internal class MicrophoneUplink(
     private val running = AtomicBoolean(false)
     private val firstPacketLogged = AtomicBoolean(false)
     @Volatile private var recorder: AudioRecord? = null
+    @Volatile private var echoCanceler: AcousticEchoCanceler? = null
     @Volatile private var socket: DatagramSocket? = null
     @Volatile private var opusEncoder: OpusEncoder? = null
     private var thread: Thread? = null
@@ -96,6 +98,9 @@ internal class MicrophoneUplink(
                     ?.also { sourceUsed = "${sourceName(source)} refused, MIC" }
             } else null
         if (nextEncoder != null) sourceUsed = "$sourceUsed opus=${nextEncoder.kind}"
+        if (nextRecorder != null && config.audioType == "telephony") {
+            sourceUsed = "$sourceUsed aec=${attachEchoCanceler(nextRecorder)}"
+        }
         if (nextRecorder == null) {
             sourceUsed = "none (${sourceName(source)} and MIC refused)"
             nextEncoder?.close()
@@ -137,6 +142,25 @@ internal class MicrophoneUplink(
             Log.e(TAG, "microphone recording failed", error)
             release()
             false
+        }
+    }
+
+    /**
+     * Calls play through the car speakers, so without echo cancellation the caller hears
+     * themselves (car test 2026-11-11: the stock CarPlay had no echo, this app did). The
+     * VOICE_COMMUNICATION source does not turn it on for this head unit, so ask for it.
+     * Returns a short word for the log: on, off, unavailable or failed.
+     */
+    private fun attachEchoCanceler(audioRecord: AudioRecord): String {
+        if (!AcousticEchoCanceler.isAvailable()) return "unavailable"
+        return try {
+            val effect = AcousticEchoCanceler.create(audioRecord.audioSessionId) ?: return "failed"
+            effect.enabled = true
+            echoCanceler = effect
+            if (effect.enabled) "on" else "off"
+        } catch (error: Exception) {
+            Log.w(TAG, "echo canceller not attached", error)
+            "failed"
         }
     }
 
@@ -339,6 +363,9 @@ internal class MicrophoneUplink(
         } catch (_: Exception) {
             // Best effort.
         }
+        val currentEcho = echoCanceler
+        echoCanceler = null
+        runCatching { currentEcho?.release() }
         val currentSocket = socket
         socket = null
         try {
