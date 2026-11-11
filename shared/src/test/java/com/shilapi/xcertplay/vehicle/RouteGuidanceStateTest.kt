@@ -132,6 +132,60 @@ class RouteGuidanceStateTest {
         assertNull(state.current())
     }
 
+    @Test
+    fun `shows the distance CarPlay shows, not the raw metres`() {
+        val state = RouteGuidanceState()
+        state.accept(RouteGuidanceState.ROUTE_GUIDANCE_MANEUVER_UPDATE, tlvs(tlv(0x01, 0, 1), tlv(0x03, 1), tlv(0x08, 1)))
+        state.accept(
+            RouteGuidanceState.ROUTE_GUIDANCE_UPDATE,
+            tlvs(tlv(0x01, 1), tlv(0x0a, 0, 0, 2, 25), tlv(0x0b, *utf8z("600")), tlv(0x0c, 1), tlv(0x0d, 0, 1)),
+        )
+        assertEquals(600, state.current()!!.distanceMeters)
+    }
+
+    @Test
+    fun `reads kilometres from the display text`() {
+        val state = RouteGuidanceState()
+        state.accept(RouteGuidanceState.ROUTE_GUIDANCE_MANEUVER_UPDATE, tlvs(tlv(0x01, 0, 1), tlv(0x03, 1), tlv(0x08, 1)))
+        // 1.2 km shown, 1,230 m raw.
+        state.accept(
+            RouteGuidanceState.ROUTE_GUIDANCE_UPDATE,
+            tlvs(tlv(0x01, 1), tlv(0x0a, 0, 0, 4, 206), tlv(0x0b, *utf8z("1.2")), tlv(0x0c, 0), tlv(0x0d, 0, 1)),
+        )
+        assertEquals(1200, state.current()!!.distanceMeters)
+    }
+
+    @Test
+    fun `without display text the raw distance is rounded so it does not flicker`() {
+        val state = RouteGuidanceState()
+        state.accept(RouteGuidanceState.ROUTE_GUIDANCE_MANEUVER_UPDATE, tlvs(tlv(0x01, 0, 1), tlv(0x03, 1), tlv(0x08, 1)))
+        state.accept(RouteGuidanceState.ROUTE_GUIDANCE_UPDATE, tlvs(tlv(0x01, 1), tlv(0x0a, 0, 0, 2, 25), tlv(0x0d, 0, 1)))
+        val first = state.current()
+        state.accept(RouteGuidanceState.ROUTE_GUIDANCE_UPDATE, tlvs(tlv(0x01, 1), tlv(0x0a, 0, 0, 2, 0), tlv(0x0d, 0, 1)))
+        // 537 m then 512 m: both show 500 m, so the cluster is not sent a new value.
+        assertEquals(500, first!!.distanceMeters)
+        assertEquals(first, state.current())
+    }
+
+    @Test
+    fun `a display value far from the raw distance is ignored`() {
+        // Protects against a wrong units code: 600 read as kilometres would be 600,000 m.
+        assertEquals(null, ManeuverDistance.fromPhone(537, "600", 0))
+        assertEquals(null, ManeuverDistance.fromPhone(537, "abc", 1))
+        assertEquals(null, ManeuverDistance.fromPhone(537, "600", 2))
+        assertEquals(600, ManeuverDistance.fromPhone(537, "600 m", 1))
+    }
+
+    @Test
+    fun `fallback rounding steps`() {
+        assertEquals(500, ManeuverDistance.rounded(537))
+        assertEquals(500, ManeuverDistance.rounded(512))
+        assertEquals(600, ManeuverDistance.rounded(551))
+        assertEquals(350, ManeuverDistance.rounded(337))
+        assertEquals(150, ManeuverDistance.rounded(150))
+        assertEquals(40, ManeuverDistance.rounded(43))
+    }
+
     private fun utf8z(value: String): IntArray =
         (value.toByteArray(Charsets.UTF_8).map { it.toInt() and 0xff } + 0).toIntArray()
 

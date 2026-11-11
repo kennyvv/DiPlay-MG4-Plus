@@ -24,6 +24,12 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
     private var routeActive = false
     private var activeIndex = -1
     private var distanceMeters = 0
+    // What CarPlay shows for the next turn (TLVs 0x0b string, 0x0c units), as the iPhone sent it.
+    private var distanceText: String? = null
+    private var distanceUnits: Int? = null
+    /** For the log: raw distance, the display text and units from the iPhone, and what is shown. */
+    var distanceDescription = ""
+        private set
     private var currentRoad = ""
     private var arrivalEpochSeconds: Long? = null
     private var remainingSeconds: Long? = null
@@ -43,8 +49,13 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
     /** The next maneuver as the iPhone sent it, or null when there is no live guidance. */
     fun current(): RouteManeuver? {
         val maneuver = activeManeuver() ?: return null
+        // The cluster gets the distance CarPlay shows (600, 500, ...), not the iPhone's raw
+        // metre count, which changes every second (537, 512, ...).
+        val shown = ManeuverDistance.shown(distanceMeters, distanceText, distanceUnits)
+        distanceDescription = "raw=${distanceMeters}m phoneText=${distanceText?.let { "\"$it\"" } ?: "none"} " +
+            "units=${distanceUnits ?: "none"} shown=${shown.meters}m via ${shown.source}"
         return RouteManeuver(
-            distanceMeters, maneuver.type, maneuver.drivingSide,
+            shown.meters, maneuver.type, maneuver.drivingSide,
             roadFor(maneuver), remainingSeconds, remainingMeters, arrivalEpochSeconds,
         )
     }
@@ -54,6 +65,8 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
         routeActive = false
         activeIndex = -1
         distanceMeters = 0
+        distanceText = null
+        distanceUnits = null
         currentRoad = ""
         arrivalEpochSeconds = null
         remainingSeconds = null
@@ -80,6 +93,8 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
         lastRouteUpdateNs = nanoTime()
         var state: Int? = null
         var distance: Int? = null
+        var text: String? = null
+        var units: Int? = null
         var firstManeuver: Int? = null
         var listPresent = false
         forEachTlv(data) { type, value, valueLength ->
@@ -92,6 +107,8 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
                 type == 0x0a && valueLength >= 4 -> {
                     distance = u32(data, value).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                 }
+                type == 0x0b -> text = utf8(data, value, valueLength)
+                type == 0x0c && valueLength >= 1 -> units = data[value].toInt() and 0xff
                 type == 0x0d -> {
                     listPresent = true
                     if (valueLength >= 2) firstManeuver = u16(data, value)
@@ -117,6 +134,9 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
             routeActive = true
         }
         if (distance != null) distanceMeters = distance!!.coerceAtLeast(0)
+        // The text and units belong with the distance they came with; keep the last pair otherwise.
+        if (text != null) distanceText = text
+        if (units != null) distanceUnits = units
         return if (current() != null) RouteChange.GUIDANCE else RouteChange.NONE
     }
 
@@ -181,5 +201,46 @@ internal class RouteGuidanceState(private val nanoTime: () -> Long = System::nan
         private const val TLV_HEADER_BYTES = 4
         private const val STALE_ROUTE_NS = 30_000_000_000L
         private const val EMPTY_LIST_HIDE_NS = 3_000_000_000L
+    }
+}
+
+/** The distance to the next turn as CarPlay shows it, which is what the cluster should show too. */
+internal object ManeuverDistance {
+    internal data class Shown(val meters: Int, val source: String)
+
+    /** iAP2 DistanceToNextManeuverDisplayUnits, as read from the spec: 0 kilometres, 1 metres. Other units are not used in Australia. */
+    private const val UNITS_KILOMETRES = 0
+    private const val UNITS_METRES = 1
+
+    fun shown(rawMeters: Int, text: String?, units: Int?): Shown {
+        fromPhone(rawMeters, text, units)?.let { return Shown(it, "phone") }
+        return Shown(rounded(rawMeters), "rounded")
+    }
+
+    /**
+     * The iPhone's own display value in metres, or null if there is none or it does not sit near the
+     * raw distance. The second check protects against a wrong guess about the units code: a value
+     * that is far from the raw distance is ignored rather than shown.
+     */
+    fun fromPhone(rawMeters: Int, text: String?, units: Int?): Int? {
+        if (text == null || units == null) return null
+        val number = Regex("[0-9]+(?:[.,][0-9]+)?").find(text)?.value?.replace(',', '.')?.toDoubleOrNull() ?: return null
+        val metres = when (units) {
+            UNITS_KILOMETRES -> number * 1000.0
+            UNITS_METRES -> number
+            else -> return null
+        }.let { Math.round(it).toInt() }
+        val tolerance = maxOf(150, rawMeters * 35 / 100)
+        return metres.takeIf { Math.abs(it - rawMeters) <= tolerance }
+    }
+
+    /** Fallback when the iPhone sends no display value: coarser steps further out, so the number does not flicker. */
+    fun rounded(rawMeters: Int): Int {
+        val step = when {
+            rawMeters >= 500 -> 100
+            rawMeters >= 100 -> 50
+            else -> 10
+        }
+        return ((rawMeters + step / 2) / step) * step
     }
 }

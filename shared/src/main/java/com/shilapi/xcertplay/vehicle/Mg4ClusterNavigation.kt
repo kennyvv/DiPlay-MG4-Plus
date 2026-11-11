@@ -169,6 +169,10 @@ object Mg4ClusterNavigation {
             report("Cluster nav: apple=${maneuver.type} side=${maneuver.drivingSide} icon=$icon " +
                 "distance=${maneuver.distanceMeters}m road=\"${maneuver.road}\" sent=$ok")
         }
+        // Each change of the shown distance, with what the iPhone sent, to check it matches CarPlay's screen.
+        if (lastSent?.distanceMeters != maneuver.distanceMeters) {
+            report("Cluster nav: distance ${route.distanceDescription}")
+        }
         lastSent = maneuver
     }
 

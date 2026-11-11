@@ -1,5 +1,6 @@
 # Unreleased
 
+
 - **Calls use the plain microphone by default (not yet tried in the car).** The car's own CarPlay audio library (`libCarPlayPlatformAudio.so`, pulled from the car 2026-11-12) opens `AudioSource.MIC` for calls and `VOICE_RECOGNITION` for Siri, mono 16-bit, and never `VOICE_COMMUNICATION`. DiPlay now does the same on Automatic; before, calls asked for `VOICE_COMMUNICATION`, which this head unit may refuse or leave silent. The echo canceller is still attached and logged. The log shows `Microphone telephony: started source=MIC ... aec=...`. Test plan D2i and C8. See [docs/MG4_SWI165_ALLGO_NOTES.md](docs/MG4_SWI165_ALLGO_NOTES.md).
 
 # MG4CPlay 0.3.2 (SWI165 fork), 2026-11-11
