@@ -1,5 +1,14 @@
 # Unreleased
 
+- **Calls use the plain microphone by default (not yet tried in the car).** The car's own CarPlay audio library (`libCarPlayPlatformAudio.so`, pulled from the car 2026-11-12) opens `AudioSource.MIC` for calls and `VOICE_RECOGNITION` for Siri, mono 16-bit, and never `VOICE_COMMUNICATION`. DiPlay now does the same on Automatic; before, calls asked for `VOICE_COMMUNICATION`, which this head unit may refuse or leave silent. The echo canceller is still attached and logged. The log shows `Microphone telephony: started source=MIC ... aec=...`. Test plan D2i and C8. See [docs/MG4_SWI165_ALLGO_NOTES.md](docs/MG4_SWI165_ALLGO_NOTES.md).
+
+# MG4CPlay 0.3.2 (SWI165 fork), 2026-11-11
+
+- **No more `-hud-test` in the version.** The installed app, its report header and the update check now show `0.3.2`, not `0.3.2-hud-test`. The package name is unchanged (`com.shihab.diplay.hudtest`), so 0.3.2 installs over your current build and keeps its settings and pairing. Older installs showing `0.3.1-hud-test` still get the update offered.
+- **Cluster turn distance matches CarPlay (not yet tried in the car).** The instrument cluster showed the iPhone's raw distance to the next turn (537 m, then 512 m) while CarPlay's screen showed 600 m, then 500 m. The cluster now gets the value CarPlay shows (the iPhone's display text and units), and if the iPhone does not send one, the raw distance rounded to 100 m above 500 m, 50 m above 100 m and 10 m below. A new distance is sent only when the shown value changes. The log has a `Cluster nav: distance raw=... phoneText=... units=... shown=...m via phone|rounded` line for each change: `via rounded` means the iPhone's display text was missing or not trusted. Test plan D4.
+
+# MG4CPlay 0.3.1 (SWI165 fork), 2026-11-10
+
 - **Call echo fix (not yet tried in the car).** On 2026-11-11 the person on the other end of a call heard themselves, which stock CarPlay in the same car did not do. Calls now turn on Android's echo canceller on the microphone. The log shows `Microphone telephony: started source=VOICE_COMMUNICATION ... aec=on`. If it says `aec=unavailable`, the head unit has no canceller and echo needs another fix. Test plan D2i.
 
 # MG4CPlay 0.3.0 (SWI165 fork), 2026-11-10

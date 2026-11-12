@@ -197,7 +197,7 @@
     <string name="hevc_software_decoder">HEVC software decoder</string>
     <string name="overlay_video_renderer">Overlay video renderer</string>
     <string name="microphone_source">Microphone (test)</string>
-    <string name="microphone_source_automatic">Automatic · default</string>
+    <string name="microphone_source_automatic">Automatic · default (as the car's own CarPlay)</string>
     <string name="microphone_source_voice">Call processing for calls and Siri</string>
     <string name="microphone_source_plain">Plain microphone</string>
     <string name="siri_microphone_pcm">Siri microphone as PCM (test)</string>

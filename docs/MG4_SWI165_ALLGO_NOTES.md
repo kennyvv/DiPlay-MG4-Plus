@@ -92,3 +92,19 @@ The stock app hard-codes a 1920x640 logical screen, 244 x 80 mm physical. It rea
   for the cluster.
 - `CarPlayTelephoneKey`, `CarPlayPlayKey`, `CarPlayKnob`: how wheel and phone keys go
   to CarPlay.
+
+## Microphone, from the car's native libraries (2026-11-12)
+
+Pulled from the car: `/system/lib64/libCarPlayPlatformAudio.so` (disassembled; not tried in
+the car).
+
+- The stock audio platform opens one `AudioRecord` per input stream: telephony uses
+  `AudioSource.MIC` (1) and Siri uses `VOICE_RECOGNITION` (6). It never asks for
+  `VOICE_COMMUNICATION` (7). Both are mono, 16-bit PCM, read in 512-byte chunks (256 bytes for
+  8 kHz narrowband telephony, set by `persist.sys.carplay.narrow_band`).
+- It attaches no echo canceller. Echo handling on stock comes from the head unit's own mic path.
+- It calls `AudioSystem::setDeviceConnectionState`; what for is not yet known.
+- A format table in the same library lists mic formats of 8, 16 and 24 kHz mono for the
+  telephony and Siri streams (reading of the table is tentative).
+- DiPlay's Automatic setting now follows this: plain microphone for calls, voice recognition
+  for Siri.

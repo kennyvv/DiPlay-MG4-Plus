@@ -25,8 +25,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 /**
  * Test override for which car microphone path calls and Siri use (an Android AudioSource), or null
- * for the default per stream (call processing for calls, voice recognition for Siri). Set by the
- * host from settings before CarPlay starts.
+ * for the default per stream (plain microphone for calls, voice recognition for Siri, the same as the
+ * car's own CarPlay audio library, which opens AudioSource 1 for telephony and 6 for Siri and never
+ * VOICE_COMMUNICATION). Set by the host from settings before CarPlay starts.
  */
 object MicrophoneSource {
     @Volatile var override: Int? = null
@@ -75,7 +76,7 @@ internal class MicrophoneUplink(
         }
 
         val source = MicrophoneSource.override ?: when (config.audioType) {
-            "telephony" -> MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            "telephony" -> MediaRecorder.AudioSource.MIC // as stock (libCarPlayPlatformAudio.so)
             "speechrecognition" -> MediaRecorder.AudioSource.VOICE_RECOGNITION
             else -> MediaRecorder.AudioSource.MIC
         }

@@ -287,7 +287,7 @@ object AirPlayPersistence {
             .apply()
     }
 
-    /** 0 automatic, 1 voice call processing for everything, 2 plain microphone. */
+    /** 0 automatic (plain microphone for calls, voice recognition for Siri, as stock), 1 voice call processing for everything, 2 plain microphone. */
     fun loadMicrophoneSource(context: Context): Int =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_MIC_SOURCE, 0).takeIf { it in 0..2 } ?: 0
 

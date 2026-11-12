@@ -61,7 +61,7 @@ end, wait a few seconds, then copy it off.
 | D2f | mg4.98: turn **Siri microphone as PCM** on, tap **Reconnect now**, and repeat D2e. Check music and Siri's voice still play; if CarPlay has no sound, turn it off again | Siri writes the sentence correctly | `Microphone test: siriFormat=PCM`, `Microphone speechrecognition: started ... codec=LPCM` |
 | D2g | mg4.98: with the better format, repeat D2e once per **Microphone (test)** option, then once with music playing | Note which option is best | `Microphone speechrecognition: started source=...` |
 | D2h | mg4.98: **Download to iPhone**. Open the zip in Files and play a `mic-...-speechrecognition.wav` and a `mic-...-telephony.wav` | Your voice is clear in both, with no gaps, echo or music | Report line `Microphone test: ... recordings=` lists the files |
-| D2i | Echo cancellation on calls: ring a second phone and have the other person say a few sentences while you talk | The other person does not hear themselves | `Microphone telephony: started source=VOICE_COMMUNICATION ... aec=on` (`unavailable` or `failed` means no canceller) |
+| D2i | Echo cancellation on calls: ring a second phone and have the other person say a few sentences while you talk | The other person does not hear themselves | `Microphone telephony: started source=MIC ... aec=on` (default since the stock-library finding; `unavailable` or `failed` means no canceller). Repeat once with Microphone (test) on Call processing, and once more with the echo canceller result noted, to compare echo and silence |
 | D3 | Start an Apple Maps route; wait for a spoken prompt | Prompt is heard; music lowers, then comes back | `audioType=default` or `alert` stream, and whether it played (see risk R1) |
 | D4 | Dashboard (Directions on the dashboard on) | Next turn, distance, street on the cluster | `Cluster nav: guidance started`, `Cluster nav: apple=...` |
 | D5 | Report location to iPhone (now on by default on MG4). Accept the location prompt once, then drive with Apple Maps open | Maps follows the car; through a tunnel or car park it keeps moving | `wheel speed started`, `first wheel speed`, `gear raw=` lines |
@@ -130,7 +130,7 @@ Not yet tried in the car. It applies from the first build with the two-pane Sett
 | R4 | Call and Siri streams can't ask for resends | The iPhone doesn't send a control port for these streams | mg4.84 hides call gaps up to 200 ms (FEC, then concealment); check `call loss` at hang-up |
 | R5 | Bluetooth music doesn't come back after CarPlay | A2DP is released and not reconnected on close | E1: check whether Bluetooth music needs a manual reconnect |
 | R6 | Siri mishears | Microphone source or processing | D2 results per option |
-| R7 | Calls sound noisy or echoey | DiPlay adds no noise or echo processing of its own; that comes from the car when the call source (`VOICE_COMMUNICATION`) is used. If the car refuses it, or does no processing for it, the call uses the raw microphone | C8 results per option |
+| R7 | Calls sound noisy or echoey | Automatic now uses the plain microphone for calls, as the car's own CarPlay library does, so any processing comes from the car's mic path or the echo canceller DiPlay attaches. Call processing (`VOICE_COMMUNICATION`) is a test option | C8 results per option |
 
 ## What to send back
 
