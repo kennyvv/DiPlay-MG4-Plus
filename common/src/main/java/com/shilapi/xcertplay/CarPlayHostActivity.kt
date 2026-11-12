@@ -3244,7 +3244,8 @@ class CarPlayHostActivity : ComponentActivity() {
                 appendLog(
                     "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(this)) "PCM" else "Opus"} " +
                         "recording=${if (AirPlayPersistence.loadMicrophoneRecording(this)) "on" else "off"} " +
-                        "callEcho=${if (AirPlayPersistence.loadCallEchoSuppression(this)) "on" else "off"}",
+                        "callEcho=${if (AirPlayPersistence.loadCallEchoSuppression(this)) "on" else "off"} " +
+                        "callsOverCarPlayOnly=${if (AirPlayPersistence.loadCallsOverCarPlayOnly(this)) "on" else "off"}",
                 )
                 sessionAudioMode == com.shilapi.xcertplay.media.AudioMode.CARPLAY_WIFI
             } &&

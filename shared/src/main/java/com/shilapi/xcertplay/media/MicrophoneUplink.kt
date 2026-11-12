@@ -283,7 +283,10 @@ internal class MicrophoneUplink(
     }
 
     private fun sendFrame(socket: DatagramSocket, counters: MicrophoneCounters, frame: ByteArray) {
-        echoSuppressor?.process(frame)
+        echoSuppressor?.let { suppressor ->
+            suppressor.process(frame)
+            suppressor.lockChange()?.let { line -> runCatching { report("Microphone ${config.audioType}: $line") } }
+        }
         level.add(frame)
         recording?.write(frame)
         val encodeStarted = System.nanoTime()

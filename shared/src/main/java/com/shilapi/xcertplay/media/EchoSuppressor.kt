@@ -127,6 +127,7 @@ internal class EchoSuppressor(
     private var echoGain = 1.0
     private var bestLag = -1
     private var bestCorr = 0.0
+    private var stableHops = 0
     private var gain = 1.0
     private var blocks = 0
     private var suppressedBlocks = 0
@@ -153,7 +154,7 @@ internal class EchoSuppressor(
         val hasReference = reference.history(history)
         if (hasReference) learnDelay(mic)
 
-        val locked = bestLag >= 0 && bestCorr >= LOCK_CORRELATION
+        val locked = isLocked()
         var farRef = 0f
         if (locked) {
             farRef = windowMax()
@@ -184,6 +185,9 @@ internal class EchoSuppressor(
             data[at + 1] = (scaled shr 8).toByte()
         }
     }
+
+    /** A delay counts once it has been the best match, above the threshold, for a third of a second. */
+    private fun isLocked() = bestLag >= 0 && bestCorr >= LOCK_CORRELATION && stableHops >= STABLE_HOPS
 
     private fun windowMax(): Float {
         var top = 0f
@@ -228,14 +232,30 @@ internal class EchoSuppressor(
                 best = lag
             }
         }
+        stableHops = if (best >= 0 && bestScore >= LOCK_CORRELATION && kotlin.math.abs(best - bestLag) <= 1) stableHops + 1 else 0
         bestLag = best
         bestCorr = bestScore
+    }
+
+    private var reportedLagMs = -1
+
+    /**
+     * Returns a log line the first time the echo delay is found, and again if it moves by more
+     * than 50 ms, so the report states how long the call takes to come back from the car speakers.
+     */
+    fun lockChange(): String? {
+        if (!isLocked()) return null
+        val lagMs = bestLag * EchoReference.HOP_MS
+        if (reportedLagMs >= 0 && kotlin.math.abs(lagMs - reportedLagMs) <= 50) return null
+        reportedLagMs = lagMs
+        return "echo delay found lag=${lagMs}ms corr=${"%.2f".format(java.util.Locale.ROOT, bestCorr)} " +
+            "coupling=${"%.2f".format(java.util.Locale.ROOT, echoGain)}"
     }
 
     /** A short word list for the diagnostic report. */
     fun summary(): String {
         val percent = if (blocks > 0) suppressedBlocks * 100 / blocks else 0
-        val lag = if (bestLag >= 0 && bestCorr >= LOCK_CORRELATION) "${bestLag * EchoReference.HOP_MS}ms" else "none"
+        val lag = if (isLocked()) "${bestLag * EchoReference.HOP_MS}ms" else "none"
         return "echo=on lag=$lag corr=${"%.2f".format(java.util.Locale.ROOT, bestCorr)} " +
             "coupling=${"%.2f".format(java.util.Locale.ROOT, echoGain)} suppressed=$percent%"
     }
@@ -249,7 +269,8 @@ internal class EchoSuppressor(
         const val LAGS = 80 // 0 to 790 ms of delay between the call audio and its echo
         const val LAG_SPREAD = 3
         const val ALPHA = 0.01
-        const val LOCK_CORRELATION = 0.25
+        const val LOCK_CORRELATION = 0.4
+        const val STABLE_HOPS = 30
         const val FAR_THRESHOLD = 60f
         const val MARGIN = 1.5
         const val FLOOR = 0.08 // about -22 dB

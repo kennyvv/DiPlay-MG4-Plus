@@ -30,7 +30,10 @@ class EchoSuppressorTest {
 
     private class Scenario(val seconds: Int, val farActive: Boolean, val nearActive: Boolean)
 
+    private var lockLines = ArrayList<String>()
+
     private fun run(scenarios: List<Scenario>, delayHops: Int = 25, coupling: Double = 0.3): List<Pair<Double, Double>> {
+        lockLines = ArrayList()
         var now = 1_000_000_000L
         val reference = EchoReference { now }
         val suppressor = EchoSuppressor(reference, rate)
@@ -63,6 +66,7 @@ class EchoSuppressorTest {
                 val data = pcm(mic)
                 val before = rms(data)
                 suppressor.process(data)
+                suppressor.lockChange()?.let { lockLines.add(it) }
                 if (h >= hops / 2) {
                     inSum += before * before
                     outSum += rms(data).let { it * it }
@@ -79,6 +83,13 @@ class EchoSuppressorTest {
     fun removesEchoOfTheOtherPerson() {
         val (echoIn, echoOut) = run(listOf(Scenario(12, farActive = true, nearActive = false))).single()
         assertTrue("echo $echoIn became $echoOut", echoOut < echoIn * 0.25)
+    }
+
+    @Test
+    fun reportsTheEchoDelayOnceItIsFound() {
+        run(listOf(Scenario(12, farActive = true, nearActive = false)))
+        assertEquals(lockLines.toString(), 1, lockLines.size)
+        assertTrue(lockLines[0], lockLines[0].startsWith("echo delay found lag=250ms"))
     }
 
     @Test

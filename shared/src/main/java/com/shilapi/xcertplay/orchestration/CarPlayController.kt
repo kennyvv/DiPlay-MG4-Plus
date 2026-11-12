@@ -2163,7 +2163,83 @@ class CarPlayController(
                 start()
             }
         }
-        if (releaseHandsFree) watchHandsFree(adapter, device)
+        if (releaseHandsFree) {
+            watchHandsFree(adapter, device)
+        } else {
+            debugLog("car Bluetooth: hands-free kept connected (Calls over CarPlay only is off); a call can also reach the car's own phone")
+        }
+        logHandsFreeState(adapter, device, "after handoff")
+        watchHandsFreeEvents(device)
+    }
+
+    @Volatile private var handsFreeEventLogger: android.content.BroadcastReceiver? = null
+
+    /** Logs the car's hands-free link state to the iPhone (connected, disconnected, ...). */
+    private fun logHandsFreeState(adapter: BluetoothAdapter, device: BluetoothDevice, label: String) {
+        val listener = object : BluetoothProfile.ServiceListener {
+            override fun onServiceConnected(profileId: Int, proxy: BluetoothProfile) {
+                try {
+                    val state = runCatching { proxy.getConnectionState(device) }.getOrNull()
+                    debugLog("car Bluetooth: hands-free state=${connectionStateName(state)} ($label)")
+                } finally {
+                    adapter.closeProfileProxy(profileId, proxy)
+                }
+            }
+
+            override fun onServiceDisconnected(profileId: Int) = Unit
+        }
+        val requested = runCatching { adapter.getProfileProxy(appContext, listener, BLUETOOTH_PROFILE_HEADSET_CLIENT) }
+            .getOrDefault(false)
+        if (!requested) debugLog("car Bluetooth: hands-free profile unavailable ($label)")
+    }
+
+    private fun connectionStateName(state: Int?): String = when (state) {
+        BluetoothProfile.STATE_DISCONNECTED -> "disconnected"
+        BluetoothProfile.STATE_CONNECTING -> "connecting"
+        BluetoothProfile.STATE_CONNECTED -> "connected"
+        BluetoothProfile.STATE_DISCONNECTING -> "disconnecting"
+        null -> "unknown"
+        else -> state.toString()
+    }
+
+    /**
+     * Logs hands-free connection changes, whether the car's Bluetooth call audio (SCO) opens, and
+     * calls the car's phone sees, so a call that reaches the car's own phone as well as CarPlay
+     * shows in the report (echo and delay on calls, car test 2026-11-13).
+     */
+    private fun watchHandsFreeEvents(device: BluetoothDevice) {
+        if (handsFreeEventLogger != null) return
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context, intent: Intent) {
+                val changed = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                if (changed != null && changed.address != device.address) return
+                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1)
+                when (intent.action) {
+                    ACTION_HEADSET_CLIENT_STATE ->
+                        debugLog("car Bluetooth: hands-free link ${connectionStateName(state)}")
+                    ACTION_HEADSET_CLIENT_AUDIO_STATE ->
+                        debugLog("car Bluetooth: hands-free call audio (SCO) state=${scoStateName(state)}")
+                    ACTION_HEADSET_CLIENT_CALL ->
+                        debugLog("car Bluetooth: car phone call changed ${runCatching { intent.extras?.keySet()?.joinToString(",") }.getOrNull()}")
+                }
+            }
+        }
+        runCatching {
+            val filter = android.content.IntentFilter().apply {
+                addAction(ACTION_HEADSET_CLIENT_STATE)
+                addAction(ACTION_HEADSET_CLIENT_AUDIO_STATE)
+                addAction(ACTION_HEADSET_CLIENT_CALL)
+            }
+            appContext.registerReceiver(receiver, filter)
+            handsFreeEventLogger = receiver
+        }.onFailure { debugLog("car Bluetooth: hands-free event logger failed: ${it.javaClass.simpleName}") }
+    }
+
+    private fun scoStateName(state: Int): String = when (state) {
+        0 -> "disconnected"
+        1 -> "connecting"
+        2 -> "connected"
+        else -> state.toString()
     }
 
     @Volatile private var handsFreeWatcher: android.content.BroadcastReceiver? = null
@@ -2197,6 +2273,8 @@ class CarPlayController(
     private fun stopWatchingHandsFree() {
         handsFreeWatcher?.let { receiver -> runCatching { appContext.unregisterReceiver(receiver) } }
         handsFreeWatcher = null
+        handsFreeEventLogger?.let { receiver -> runCatching { appContext.unregisterReceiver(receiver) } }
+        handsFreeEventLogger = null
     }
 
     /** Gives the car its hands-free link back after a CarPlay-only calls session. */
@@ -2583,6 +2661,11 @@ class CarPlayController(
         // BluetoothHeadsetClient.ACTION_CONNECTION_STATE_CHANGED (hidden).
         private const val ACTION_HEADSET_CLIENT_STATE =
             "android.bluetooth.headsetclient.profile.action.CONNECTION_STATE_CHANGED"
+        // BluetoothHeadsetClient.ACTION_AUDIO_STATE_CHANGED and ACTION_CALL_CHANGED (hidden).
+        private const val ACTION_HEADSET_CLIENT_AUDIO_STATE =
+            "android.bluetooth.headsetclient.profile.action.AUDIO_STATE_CHANGED"
+        private const val ACTION_HEADSET_CLIENT_CALL =
+            "android.bluetooth.headsetclient.profile.action.AG_CALL_CHANGED"
 
         /** Hidden `BluetoothProfile.A2DP_SINK` on Android 9: the role a head unit plays. */
         private const val BLUETOOTH_PROFILE_A2DP_SINK = 11

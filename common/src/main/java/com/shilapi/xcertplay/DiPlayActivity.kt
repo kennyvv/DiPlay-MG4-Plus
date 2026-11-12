@@ -1173,6 +1173,8 @@ class DiPlayActivity : ComponentActivity() {
         appendLine(
             "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(appContext)) "PCM" else "Opus"} " +
                 "recording=${if (AirPlayPersistence.loadMicrophoneRecording(appContext)) "on" else "off"} " +
+                "callEcho=${if (AirPlayPersistence.loadCallEchoSuppression(appContext)) "on" else "off"} " +
+                "callsOverCarPlayOnly=${if (AirPlayPersistence.loadCallsOverCarPlayOnly(appContext)) "on" else "off"} " +
                 "recordings=${MicRecordings.files(appContext).joinToString(",") { "${it.name}(${it.length()})" }.ifEmpty { "none" }}",
         )
         com.shilapi.xcertplay.settings.SettingsChangeLog.lines(appContext).takeIf { it.isNotEmpty() }?.let { lines ->
