@@ -1359,6 +1359,9 @@ private class AudioRenderer(
                 break
             }
             if (count < writeLength) partialWritesThisWindow++
+            if (format.audioType == "telephony") {
+                EchoReference.shared.push(data, offset + written, count, format.sampleRate, format.channels)
+            }
             written += count
             val framesWritten = count / frameBytes
             totalWrittenFrames += framesWritten

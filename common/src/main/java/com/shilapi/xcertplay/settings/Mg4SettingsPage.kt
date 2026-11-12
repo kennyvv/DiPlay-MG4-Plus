@@ -399,6 +399,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.MUSIC_BUFFER -> R.string.music_buffer
         SettingRow.MICROPHONE -> R.string.microphone_source
         SettingRow.SIRI_MIC_PCM -> R.string.siri_microphone_pcm
+        SettingRow.CALL_ECHO_SUPPRESSION -> R.string.call_echo_suppression
         SettingRow.MIC_RECORDING -> R.string.microphone_recording
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
@@ -493,6 +494,9 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                 }
                 SettingRow.SIRI_MIC_PCM -> switch(AirPlayPersistence.loadSiriMicrophonePcm(activity)) {
                     AirPlayPersistence.saveSiriMicrophonePcm(activity, it)
+                }
+                SettingRow.CALL_ECHO_SUPPRESSION -> switch(AirPlayPersistence.loadCallEchoSuppression(activity)) {
+                    AirPlayPersistence.saveCallEchoSuppression(activity, it)
                 }
                 SettingRow.MIC_RECORDING -> switch(AirPlayPersistence.loadMicrophoneRecording(activity)) {
                     AirPlayPersistence.saveMicrophoneRecording(activity, it)

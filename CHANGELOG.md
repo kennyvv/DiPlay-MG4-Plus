@@ -1,5 +1,9 @@
 # Unreleased
 
+- **Software echo suppression on calls (not yet tried in the car).** The 0.3.3 car log (2026-11-13, call at 06:58) shows `Microphone telephony: started source=MIC ... aec=unavailable`: this head unit has no Android echo canceller, so the other person still heard themselves. Turning **Calls over CarPlay only** off doesn't change this, because the iPhone still sends the call over CarPlay. DiPlay now works out how loud the call audio it plays is, learns the delay and strength of the echo in the microphone, and turns the microphone down while it is no louder than that echo. When you talk over the other person, your voice is louder than the echo and passes through. New switch **Echo suppression on calls** (Settings > Sound, on by default) so it can be compared with it off. The log shows `swEcho=on` on the `Microphone telephony: started` line, and each 5 s stats line adds `echo=on lag=...ms corr= coupling= suppressed=%`. Recordings from **Record microphone (test)** now hold the suppressed audio. Test plan D2i.
+
+# MG4CPlay 0.3.3 (SWI165 fork), 2026-11-12
+
 
 - **Calls use the plain microphone by default (not yet tried in the car).** The car's own CarPlay audio library (`libCarPlayPlatformAudio.so`, pulled from the car 2026-11-12) opens `AudioSource.MIC` for calls and `VOICE_RECOGNITION` for Siri, mono 16-bit, and never `VOICE_COMMUNICATION`. DiPlay now does the same on Automatic; before, calls asked for `VOICE_COMMUNICATION`, which this head unit may refuse or leave silent. The echo canceller is still attached and logged. The log shows `Microphone telephony: started source=MIC ... aec=...`. Test plan D2i and C8. See [docs/MG4_SWI165_ALLGO_NOTES.md](docs/MG4_SWI165_ALLGO_NOTES.md).
 

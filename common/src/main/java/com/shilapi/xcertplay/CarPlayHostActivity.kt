@@ -3239,10 +3239,12 @@ class CarPlayHostActivity : ComponentActivity() {
                         2 -> android.media.MediaRecorder.AudioSource.MIC
                         else -> null
                     }
+                com.shilapi.xcertplay.media.CallEchoSuppression.enabled = AirPlayPersistence.loadCallEchoSuppression(this)
                 MicRecordings.sync(applicationContext)
                 appendLog(
                     "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(this)) "PCM" else "Opus"} " +
-                        "recording=${if (AirPlayPersistence.loadMicrophoneRecording(this)) "on" else "off"}",
+                        "recording=${if (AirPlayPersistence.loadMicrophoneRecording(this)) "on" else "off"} " +
+                        "callEcho=${if (AirPlayPersistence.loadCallEchoSuppression(this)) "on" else "off"}",
                 )
                 sessionAudioMode == com.shilapi.xcertplay.media.AudioMode.CARPLAY_WIFI
             } &&

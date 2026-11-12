@@ -201,6 +201,7 @@
     <string name="microphone_source_voice">Call processing for calls and Siri</string>
     <string name="microphone_source_plain">Plain microphone</string>
     <string name="siri_microphone_pcm">Siri microphone as PCM (test)</string>
+    <string name="call_echo_suppression">Echo suppression on calls</string>
     <string name="microphone_recording">Record microphone (test)</string>
     <string name="settings_footer_microphone">For comparing how well Siri and callers hear you. PCM sends Siri plain audio instead of Opus; if CarPlay loses sound, turn it off. Record microphone keeps the first 10 seconds of each Siri request and call on the car and adds them to Download to iPhone. Turning it off deletes them.</string>
     <string name="mg4_cluster_directions">Directions on the dashboard (test)</string>
