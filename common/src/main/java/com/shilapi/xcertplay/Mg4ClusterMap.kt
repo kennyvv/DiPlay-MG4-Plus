@@ -33,6 +33,15 @@ internal object Mg4ClusterMap {
 
     val isShown: Boolean get() = square != null
 
+    /**
+     * Told when the map's page shows or hides ([visibleOn]), on the main thread. The host pauses the iPhone's
+     * cluster screen with it (stopUI / showUI) when **Pause the dashboard map off its page** is on.
+     */
+    var onVisibility: ((Boolean) -> Unit)? = null
+
+    /** Whether the map shows on the cluster now; null before the first page read or without the map. */
+    val isVisible: Boolean? get() = square?.isVisible
+
     /** Puts the square on the cluster and feeds it [sink]'s cluster stream of [streamSide] px. Main thread. */
     fun attach(context: Context, sink: AndroidMediaSink, streamSide: Int, log: (String) -> Unit) {
         this.log = log
@@ -53,6 +62,7 @@ internal object Mg4ClusterMap {
                     addView(surfaceVideo(display, streamSide), FrameLayout.LayoutParams(-1, -1))
                 }
             }
+            square?.onVisibility = { shown -> onVisibility?.invoke(shown) }
             this.log("Cluster map: stream ${streamSide}x$streamSide")
         }
     }

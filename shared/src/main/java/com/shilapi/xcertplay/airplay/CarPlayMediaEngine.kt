@@ -60,6 +60,9 @@ class CarPlayMediaEngine(
     )
 
     private val streams = ConcurrentHashMap<StreamKey, Closeable>()
+    private val screenEndCheck = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { runnable ->
+        Thread(runnable, "airplay-screen-end").apply { isDaemon = true }
+    }
     private val audioMeta = ConcurrentHashMap<StreamKey, AudioMeta>()
     private val pendingMicrophone = ConcurrentHashMap<StreamKey, MicrophoneConfig>()
     private val audioCaptures = ConcurrentHashMap<StreamKey, AudioPacketCapture>()
@@ -104,10 +107,20 @@ class CarPlayMediaEngine(
                         TAG,
                         "screen stream ended type=$type reason=${cause?.message ?: "peer EOF"}",
                     )
-                    if (streams.remove(streamKey, screen)) {
-                        sink.onScreenStreamActive(type, false)
-                    }
-                    session.close()
+                    val unexpected = streams.remove(streamKey, screen)
+                    if (unexpected) sink.onScreenStreamActive(type, false)
+                    // The iPhone tears a screen down on purpose (TEARDOWN) when the car takes the screen
+                    // (changeModes), and may close the socket just before that TEARDOWN is handled. Only a
+                    // screen that ends without its TEARDOWN ends the session; music and the cluster carry on.
+                    if (!unexpected) return
+                    screenEndCheck.schedule({
+                        if (synchronized(session.activeStreams) { type in session.activeStreams }) {
+                            session.logDebug("Video: screen type=$type ended without TEARDOWN; closing the session")
+                            session.close()
+                        } else {
+                            session.logDebug("Video: screen type=$type torn down by the iPhone; session kept")
+                        }
+                    }, SCREEN_END_GRACE_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
                 }
             },
         )
@@ -449,6 +462,7 @@ class CarPlayMediaEngine(
         const val TAG = "xcertplay-usb"
         const val STREAM_TYPE_MAIN_SCREEN = 110
         const val STREAM_TYPE_ALT_SCREEN = 111
+        const val SCREEN_END_GRACE_MS = 1_500L
         const val STREAM_TYPE_MAIN_AUDIO = 100
         const val STREAM_TYPE_DATA = 130
         const val DATASTREAM_OUTPUT_KEY = "DataStream-Output-Encryption-Key"

@@ -217,6 +217,13 @@ class CarPlayController(
     @Volatile private var activeSession: AirPlaySession? = null
     private val playbackStatus = com.shilapi.xcertplay.media.CarPlayPlaybackStatus()
     private val songState = com.shilapi.xcertplay.media.CarPlaySongState()
+    private val phonePowerState = com.shilapi.xcertplay.media.CarPlayPhonePowerState()
+
+    /** Told when the iPhone's battery level or charging changes (iAP2 PowerUpdate); may run on the link worker. */
+    @Volatile var phonePowerListener: ((com.shilapi.xcertplay.media.CarPlayPhonePower?) -> Unit)? = null
+
+    /** The iPhone's battery known so far this session, if it has sent any. */
+    fun phonePower(): com.shilapi.xcertplay.media.CarPlayPhonePower? = synchronized(phonePowerState) { phonePowerState.current() }
 
     /** Told when the iPhone starts or stops playing media; may run on any thread. */
     @Volatile var playbackListener: ((Boolean) -> Unit)? = null
@@ -234,6 +241,72 @@ class CarPlayController(
 
     /** The song known so far, for a listener that attaches mid-session. */
     fun currentSong(): com.shilapi.xcertplay.media.CarPlaySong? = synchronized(songState) { songState.current() }
+
+    private val modeHandover = com.shilapi.xcertplay.airplay.CarPlayModeHandover()
+    @Volatile private var modeState: com.shilapi.xcertplay.airplay.CarPlayModes.State? = null
+
+    /** Told when the iPhone reports who holds the screen, audio, Siri, calls and navigation; any thread. */
+    @Volatile var modesListener: ((com.shilapi.xcertplay.airplay.CarPlayModes.State) -> Unit)? = null
+
+    /** The last `modesChanged` from the iPhone this session, if any. */
+    fun modes(): com.shilapi.xcertplay.airplay.CarPlayModes.State? = modeState
+
+    /**
+     * The car takes or borrows a resource from the iPhone ([com.shilapi.xcertplay.airplay.CarPlayModes]).
+     * False when there is no session or the car already holds it that way. Sent off the caller's thread.
+     */
+    fun carHolds(change: com.shilapi.xcertplay.airplay.CarPlayModes.Change, reason: String): Boolean {
+        if (closed) return false
+        val session = activeSession ?: return false
+        val send = modeHandover.hold(change) ?: return false
+        return sendModes(session, send, reason)
+    }
+
+    /** The car gives a resource back (untake or unborrow, whichever it holds). False when it holds nothing. */
+    fun carReleases(resourceId: Int, reason: String): Boolean {
+        if (closed) return false
+        val session = activeSession ?: return false
+        val send = modeHandover.release(resourceId) ?: return false
+        return sendModes(session, send, reason)
+    }
+
+    /**
+     * Asks the iPhone to draw (showUI and a keyframe) or stop drawing (stopUI) CarPlay's instrument-cluster screen,
+     * for the dashboard map while the cluster is off its Navigation page. False without a session.
+     */
+    fun setClusterUiShown(shown: Boolean, reason: String): Boolean {
+        if (closed) return false
+        val session = activeSession ?: return false
+        return try {
+            touchExecutor.execute {
+                val sent = session.setClusterUiShown(shown)
+                debugLog("Cluster map: ${if (shown) "showUI" else "stopUI"} reason=$reason ok=$sent")
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun sendModes(session: AirPlaySession, change: com.shilapi.xcertplay.airplay.CarPlayModes.Change, reason: String): Boolean =
+        try {
+            touchExecutor.execute {
+                val sent = session.sendCommand(com.shilapi.xcertplay.airplay.CarPlayModes.command(listOf(change), reason))
+                debugLog("CarPlay modes: sent ${change.describe()} reason=$reason ok=$sent")
+                // Giving the screen back only frees it; the stock app then asks the iPhone to show CarPlay
+                // (CarPlayScreenHandler.resumeCarPlay: untake, then appLaunch(APP_HOME) = requestUI without a URL).
+                if (change.resourceId == com.shilapi.xcertplay.airplay.CarPlayModes.RESOURCE_SCREEN &&
+                    change.transferType != com.shilapi.xcertplay.airplay.CarPlayModes.TRANSFER_TAKE &&
+                    change.transferType != com.shilapi.xcertplay.airplay.CarPlayModes.TRANSFER_BORROW
+                ) {
+                    val shown = session.sendCommand(com.shilapi.xcertplay.airplay.CarPlayModes.requestUi())
+                    debugLog("CarPlay modes: sent requestUI ok=$shown")
+                }
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
 
     @Volatile private var airPlayDeviceName: String? = null
 
@@ -325,6 +398,10 @@ class CarPlayController(
                 videoListener?.onVideoSessionEnded()
                 synchronized(playbackStatus) { playbackStatus.clear() }?.let { playing -> playbackListener?.invoke(playing) }
                 lastArtwork = null
+                modeState = null
+                modeHandover.clear()
+                val hadPower = synchronized(phonePowerState) { (phonePowerState.current() != null).also { phonePowerState.clear() } }
+                if (hadPower) phonePowerListener?.invoke(null)
                 val hadSong = synchronized(songState) { (songState.current() != null).also { songState.clear() } }
                 if (hadSong) songListener?.invoke(null)
             }
@@ -372,6 +449,13 @@ class CarPlayController(
             debugLog(
                 "AirPlay command type=$type params=${params.keys.sorted().joinToString(",")}",
             )
+            if (type == "modesChanged" && activeSession === session) {
+                val state = com.shilapi.xcertplay.airplay.CarPlayModes.parse(params)
+                modeState = state
+                modeHandover.onState(state)
+                debugLog("CarPlay modes: iPhone reports ${state.describe()} raw=[${com.shilapi.xcertplay.airplay.CarPlayModes.raw(params)}]")
+                modesListener?.invoke(state)
+            }
             if (
                 config.transport == CarPlayTransport.WIRELESS &&
                 !closed &&
@@ -639,6 +723,10 @@ class CarPlayController(
             (songState.current() != before) to songState.current()
         }
         if (changed) songListener?.invoke(song)
+        synchronized(phonePowerState) { phonePowerState.accept(frame) }?.let { power ->
+            debugLog("iPhone power: ${power.describe()} raw=${frame.payload.joinToString("") { "%02x".format(it) }}")
+            phonePowerListener?.invoke(power)
+        }
     }
 
     private fun startMfi() {

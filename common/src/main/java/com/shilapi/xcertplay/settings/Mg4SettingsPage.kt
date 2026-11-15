@@ -393,6 +393,8 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
             "cluster_song" -> add(R.string.mg4_cluster_song_description)
             "carplay_wheel" -> add(R.string.mg4_carplay_wheel_description)
             "mfi" -> add(R.string.settings_footer_car_mfi)
+            "carplay_modes" -> add(R.string.settings_footer_carplay_modes)
+            "cluster_map_pause" -> add(R.string.settings_footer_cluster_map_pause)
             "location" -> add(R.string.sends_precise_android_location_as_carplay_gps_data_when_th)
             "parked" -> add(R.string.settings_footer_video_while_parked)
             "appearance" -> add(R.string.mg4_sunset_dark_mode_description)
@@ -459,6 +461,10 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.WHEEL_UP_DOWN -> R.string.wheel_up_down
         SettingRow.WHEEL_LEFT_RIGHT -> R.string.wheel_left_right
         SettingRow.CAR_MFI_CHIP -> R.string.use_car_mfi_chip
+        SettingRow.MODES_SCREEN -> R.string.carplay_modes_screen
+        SettingRow.MODES_AUDIO -> R.string.carplay_modes_audio
+        SettingRow.CLUSTER_MAP_PAUSE -> R.string.cluster_map_pause
+        SettingRow.RECHECK_CAR_SOURCE -> R.string.recheck_car_source
         SettingRow.SEND_LOCATION -> R.string.settings_send_location
         SettingRow.VIDEO_WHILE_PARKED -> R.string.mg4_video_while_parked
         SettingRow.SUNSET_DARK_MODE -> R.string.mg4_sunset_dark_mode
@@ -610,6 +616,18 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     // A fresh choice gets a fresh try, even if the chip failed earlier this run.
                     com.shilapi.xcertplay.mfi.CarMfiState.reset()
                     AirPlayPersistence.saveUseCarMfiChip(activity, it)
+                }
+                SettingRow.MODES_SCREEN -> switch(AirPlayPersistence.loadModesScreen(activity)) {
+                    AirPlayPersistence.saveModesScreen(activity, it)
+                }
+                SettingRow.MODES_AUDIO -> switch(AirPlayPersistence.loadModesAudio(activity)) {
+                    AirPlayPersistence.saveModesAudio(activity, it)
+                }
+                SettingRow.RECHECK_CAR_SOURCE -> switch(AirPlayPersistence.loadRecheckCarSource(activity)) {
+                    AirPlayPersistence.saveRecheckCarSource(activity, it)
+                }
+                SettingRow.CLUSTER_MAP_PAUSE -> switch(AirPlayPersistence.loadClusterMapPause(activity)) {
+                    AirPlayPersistence.saveClusterMapPause(activity, it)
                 }
                 SettingRow.CLUSTER_MAP -> {
                     val choices = listOf(null) + CarPlayClusterDisplay.Content.entries

@@ -43,6 +43,8 @@ internal object LauncherBridge {
     private var cover: Pair<Int, Bitmap>? = null
     private var lastSentCover: Int? = null
     private var lastName = ""
+    private var power: com.shilapi.xcertplay.media.CarPlayPhonePower? = null
+    private var modes: com.shilapi.xcertplay.airplay.CarPlayModes.State? = null
 
     /** "bluetooth" (hybrid: music over the car's Bluetooth Music) or "wifi" (DiPlay plays it). */
     @Volatile var audioMode: String = "bluetooth"
@@ -63,6 +65,8 @@ internal object LauncherBridge {
         this.context = app
         controller = target
         song = target.currentSong()
+        power = target.phonePower()
+        modes = target.modes()
         if (!registered && wanted(app)) {
             app.registerReceiver(commands, IntentFilter(ACTION_COMMAND), PERMISSION, main)
             registered = true
@@ -77,6 +81,8 @@ internal object LauncherBridge {
         controller = null
         song = null
         cover = null
+        power = null
+        modes = null
         publish()
     }
 
@@ -93,6 +99,18 @@ internal object LauncherBridge {
     fun onSong(next: CarPlaySong?) = main.post {
         if (next?.title != song?.title) cover = cover?.takeIf { Mg4ClusterSong.coverMatches(next, it.first) }
         song = next
+        publish()
+    }
+
+    /** The iPhone's battery changed (or is unknown again); any thread. */
+    fun onPhonePower(next: com.shilapi.xcertplay.media.CarPlayPhonePower?) = main.post {
+        power = next
+        publish()
+    }
+
+    /** The iPhone reported who holds the sound, Siri, calls and navigation; any thread. */
+    fun onModes(next: com.shilapi.xcertplay.airplay.CarPlayModes.State) = main.post {
+        modes = next
         publish()
     }
 
@@ -140,6 +158,23 @@ internal object LauncherBridge {
             .putExtra("playing", s?.playing ?: false)
             .putExtra("audio_mode", audioMode)
             .putExtra("device_name", controller?.phoneName().orEmpty().also { lastName = it })
+        // Playback position: the launcher moves it on from position_at (SystemClock.elapsedRealtime) while playing.
+        val now = android.os.SystemClock.elapsedRealtime()
+        intent.putExtra("duration_ms", s?.durationMs ?: -1L)
+            .putExtra("position_ms", s?.positionMs(now) ?: -1L)
+            .putExtra("position_at", now)
+        // The iPhone's battery (iAP2 PowerUpdate): -1 and "" while unknown.
+        val p = power
+        intent.putExtra("phone_battery", p?.batteryPercent ?: -1)
+            .putExtra("phone_charging", p?.charging?.name?.lowercase().orEmpty())
+            .putExtra("phone_charger", p?.externalCharger ?: false)
+        // Who has what, from the iPhone's modesChanged: "iphone", "car" or "" while unknown.
+        val m = modes
+        intent.putExtra("carplay_audio", owner(m?.mainAudio))
+            .putExtra("carplay_screen", owner(m?.screen))
+            .putExtra("navigating", m?.navigating ?: false)
+            .putExtra("siri_active", m?.siriActive ?: false)
+            .putExtra("on_call", m?.onCall ?: false)
         // Send the cover only when it changes: broadcasts are kept small.
         val c = cover?.takeIf { Mg4ClusterSong.coverMatches(s, it.first) }
         if (c != null && c.first != lastSentCover) {
@@ -152,6 +187,12 @@ internal object LauncherBridge {
         } catch (e: RuntimeException) {
             Log.w(TAG, "launcher broadcast failed: $e")
         }
+    }
+
+    private fun owner(entity: Int?): String = when (entity) {
+        com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_CONTROLLER -> "iphone"
+        com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_ACCESSORY -> "car"
+        else -> ""
     }
 
     private fun decode(bytes: ByteArray): Bitmap? {

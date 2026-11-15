@@ -665,6 +665,10 @@ class CarPlayHostActivity : ComponentActivity() {
         maybeStartCarPlay()
         applyFullscreenMode()
         CarPlayWheel.onScreen = true
+        // Give the screen back whenever the car holds it, even if the switch was turned off meanwhile.
+        if (controller?.carReleases(com.shilapi.xcertplay.airplay.CarPlayModes.RESOURCE_SCREEN, "CarPlay shown") == true) {
+            appendLog("CarPlay modes: CarPlay shown, the screen goes back to the iPhone")
+        }
     }
 
     // The steering-wheel voice key reaches the focused window; while CarPlay is on screen it opens Siri.
@@ -685,6 +689,12 @@ class CarPlayHostActivity : ComponentActivity() {
     override fun onStop() {
         // The controller, USB/iAP2 link, and VPN attachment intentionally outlive the UI.
         CarPlayWheel.onScreen = false
+        // Experimental: CarPlay's own hand-over. The car takes the screen until you come back, as the
+        // stock CarPlay app does when its activity stops (CarPlayScreenHandler.onActivityStopped).
+        if (AirPlayPersistence.loadModesScreen(this) && !isFinishing) {
+            val sent = controller?.carHolds(com.shilapi.xcertplay.airplay.CarPlayModes.CAR_TAKES_SCREEN, "CarPlay hidden") == true
+            if (sent) appendLog("CarPlay modes: CarPlay hidden, the car takes the screen")
+        }
         super.onStop()
     }
 
@@ -2770,6 +2780,102 @@ class CarPlayHostActivity : ComponentActivity() {
         )
     }
 
+    /**
+     * CarPlay's own hand-over ([com.shilapi.xcertplay.airplay.CarPlayModes]): the iPhone's `modesChanged` replies
+     * are always logged and go to the MG4 Launcher; with **Hand CarPlay audio to the car's sources** on, the car
+     * asks for its audio focus again when the iPhone takes the sound back from the car.
+     */
+    private fun attachCarPlayModes(target: CarPlayController) {
+        if (Mg4FirmwareProfile.detect().isMg4 && Mg4CarAudioSource.current == null) {
+            Mg4CarAudioSource.start(this, { pkg, usage -> onCarAudioSource(pkg, usage) }, ::appendLog)
+        }
+        Mg4ClusterMap.onVisibility = { shown -> pauseClusterMap(shown, "cluster page") }
+        var previous: com.shilapi.xcertplay.airplay.CarPlayModes.State? = target.modes()
+        target.modesListener = { state ->
+            val before = previous
+            previous = state
+            runOnUiThread {
+                LauncherBridge.onModes(state)
+                val tookBack = before?.mainAudio == com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_ACCESSORY &&
+                    state.mainAudio == com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_CONTROLLER
+                if (tookBack && AirPlayPersistence.loadModesAudio(this) && sink?.audioFocusLost() == true) {
+                    val asked = sink?.reacquireAudioFocus() == true
+                    appendLog("CarPlay modes: the iPhone took the sound back, car audio focus asked again=$asked")
+                }
+            }
+        }
+    }
+
+    /**
+     * Experimental (**Pause the dashboard map off its page**): stop the iPhone drawing the cluster screen while the
+     * cluster is off its Navigation page, and draw it again (with a keyframe) when it comes back. Main thread.
+     */
+    private fun pauseClusterMap(shown: Boolean, reason: String) {
+        if (!AirPlayPersistence.loadClusterMapPause(this) && !clusterMapPaused) return
+        if (shown == !clusterMapPaused) return
+        if (controller?.setClusterUiShown(shown, reason) == true) {
+            clusterMapPaused = !shown
+            appendLog("Cluster map: ${if (shown) "drawing again" else "paused"} ($reason)")
+        }
+    }
+
+    private var clusterMapPaused = false
+
+    /** True while a CarPlay music stream plays; set from media threads. */
+    @Volatile private var mediaAudioRunning = false
+    private val recheckCarSource = Runnable { recheckCarAudioSource() }
+
+    /**
+     * The car's audio source changed ([Mg4CarAudioSource]). Always logged. With **Recheck the car's audio source**
+     * on: when the car names another app while CarPlay music plays and DiPlay was never told it lost focus, ask for
+     * focus again after 2 s, the fresh grant a pause and play in CarPlay gives. Main thread.
+     */
+    private fun onCarAudioSource(pkg: String?, usage: Int?) {
+        appendLog("Car source: ${pkg ?: "none"} usage=${usage ?: "?"} carPlayMusic=$mediaAudioRunning focusLost=${sink?.audioFocusLost()}")
+        mainHandler.removeCallbacks(recheckCarSource)
+        if (pkg != packageName) mainHandler.postDelayed(recheckCarSource, CAR_SOURCE_RECHECK_MS)
+    }
+
+    private fun recheckCarAudioSource() {
+        val source = Mg4CarAudioSource.current
+        if (source == packageName || !mediaAudioRunning) return
+        val current = sink ?: return
+        if (current.audioFocusLost()) return
+        if (!AirPlayPersistence.loadRecheckCarSource(this)) {
+            appendLog("Car source: $source plays instead of CarPlay music although DiPlay holds focus (recheck is off)")
+            return
+        }
+        val asked = current.reacquireAudioFocus()
+        appendLog("Car source: $source plays instead of CarPlay music although DiPlay holds focus; focus asked again=$asked")
+    }
+
+    /**
+     * Experimental: tell the iPhone when another car source takes CarPlay's music focus, the way the stock CarPlay
+     * app does (CarPlayAudioManager): a lasting loss takes the main audio (the iPhone pauses), a short one borrows
+     * it, and focus back gives it back. Calls and Siri focus are left alone. Main thread.
+     */
+    private fun onCarPlayAudioFocus(change: Int, media: Boolean) {
+        val target = controller ?: return
+        val modes = com.shilapi.xcertplay.airplay.CarPlayModes
+        when (change) {
+            android.media.AudioManager.AUDIOFOCUS_GAIN -> {
+                if (target.carReleases(modes.RESOURCE_MAIN_AUDIO, "CarPlay has the car's sound again")) {
+                    appendLog("CarPlay modes: focus back, the sound goes back to the iPhone")
+                }
+            }
+            android.media.AudioManager.AUDIOFOCUS_LOSS -> if (media && AirPlayPersistence.loadModesAudio(this)) {
+                if (target.carHolds(modes.CAR_TAKES_AUDIO, "another car source took the sound")) {
+                    appendLog("CarPlay modes: focus lost, the car takes the sound")
+                }
+            }
+            android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> if (media && AirPlayPersistence.loadModesAudio(this)) {
+                if (target.carHolds(modes.CAR_BORROWS_AUDIO, "another car source interrupts")) {
+                    appendLog("CarPlay modes: focus lost for a moment, the car borrows the sound")
+                }
+            }
+        }
+    }
+
     /** The experimental cluster song card follows [target]'s songs, on the eh32 cluster (SWI68, SWI165) only. */
     private fun attachClusterSong(target: CarPlayController) {
         val enabled = AirPlayPersistence.loadClusterSong(this) &&
@@ -2795,6 +2901,7 @@ class CarPlayHostActivity : ComponentActivity() {
             }
         }
         if (launcher) target.lastArtwork()?.let(LauncherBridge::onArtwork)
+        target.phonePowerListener = if (launcher) LauncherBridge::onPhonePower else null
         if (enabled) target.lastArtwork()?.let(Mg4ClusterSong::updateArtwork)
     }
 
@@ -3016,7 +3123,10 @@ class CarPlayHostActivity : ComponentActivity() {
             onAudioDiagnostic = { message ->
                 diagnosticLog?.append(formattedLogLine(message, System.currentTimeMillis()))
             },
-            onMediaAudioChanged = CarPlayMediaKeys::onMediaAudioChanged,
+            onMediaAudioChanged = { running ->
+                mediaAudioRunning = running
+                CarPlayMediaKeys.onMediaAudioChanged(running)
+            },
         )
     }
 
@@ -3121,6 +3231,7 @@ class CarPlayHostActivity : ComponentActivity() {
         displayDiagnosticAttempt = DisplayDiagnosticSnapshot.currentAttempt(this)
         controller = snapshot.controller
         sink = snapshot.sink
+        snapshot.sink.audioFocusListener = ::onCarPlayAudioFocus
         CarPlayBackgroundSession.store(snapshot.controller, snapshot.sink, snapshot.width, snapshot.height, this) { completion ->
             runOnUiThread {
                 shutdown(false, "DiPlay disconnect", completion)
@@ -3144,6 +3255,7 @@ class CarPlayHostActivity : ComponentActivity() {
         CarPlayWheel.controller = snapshot.controller
         CarPlayWheel.log = ::appendLog
         attachClusterSong(snapshot.controller)
+        attachCarPlayModes(snapshot.controller)
         attachClusterLanes()
         currentSurface?.let(::attachSurface)
         val serviceReused = snapshot.controller.hasActiveAirPlayAttachment()
@@ -3219,6 +3331,7 @@ class CarPlayHostActivity : ComponentActivity() {
             controllerGeneration = controllerGeneration,
         )
         sink = renderer
+        renderer.audioFocusListener = ::onCarPlayAudioFocus
         runOnUiThread {
             val cluster = airPlayConfig.cluster
             if (cluster != null) {
@@ -3275,7 +3388,10 @@ class CarPlayHostActivity : ComponentActivity() {
                         "siriPrewarm=${CarPlayMediaKeys.siriPrewarm} " +
                         "siriOwnFocus=${com.shilapi.xcertplay.media.AudioFocusOptions.siriOwnFocus} " +
                         "navDucking=${com.shilapi.xcertplay.media.NavigationDucking.enabled} " +
-                        "carMfiChip=${AirPlayPersistence.loadUseCarMfiChip(this)}",
+                        "carMfiChip=${AirPlayPersistence.loadUseCarMfiChip(this)} " +
+                        "modesScreen=${AirPlayPersistence.loadModesScreen(this)} " +
+                        "modesAudio=${AirPlayPersistence.loadModesAudio(this)} " +
+                        "recheckCarSource=${AirPlayPersistence.loadRecheckCarSource(this)}",
                 )
                 MicRecordings.sync(applicationContext)
                 appendLog(
@@ -3297,6 +3413,7 @@ class CarPlayHostActivity : ComponentActivity() {
         CarPlayWheel.controller = next
         CarPlayWheel.log = ::appendLog
         attachClusterSong(next)
+        attachCarPlayModes(next)
         attachClusterLanes()
         armStartupWatchdog()
         CarPlayMediaKeys.attach(
@@ -3780,7 +3897,14 @@ class CarPlayHostActivity : ComponentActivity() {
             } else {
                 activeScreenStreamTypes.remove(type)
             }
-            if (type == SCREEN_TYPE_ALT) appendLog("Cluster map: stream active=$active")
+            if (type == SCREEN_TYPE_ALT) {
+                appendLog("Cluster map: stream active=$active")
+                // A new cluster stream starts drawing; pause it at once when the map is off its page.
+                if (active) {
+                    clusterMapPaused = false
+                    if (Mg4ClusterMap.isVisible == false) pauseClusterMap(false, "stream started off the page")
+                }
+            }
             updateDebugOverlays()
         }
     }
@@ -3921,6 +4045,7 @@ class CarPlayHostActivity : ComponentActivity() {
     }
 
     private companion object {
+        private const val CAR_SOURCE_RECHECK_MS = 2_000L
         const val TAG = "xcertplay-usb"
         const val SCREEN_TYPE_MAIN = 110
         const val SCREEN_TYPE_ALT = 111

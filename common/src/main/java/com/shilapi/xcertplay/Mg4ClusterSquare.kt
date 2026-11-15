@@ -39,6 +39,13 @@ internal class Mg4ClusterSquare private constructor(
     private val shownX: Int,
     private val shownY: Int,
 ) {
+    /** Told when the window's page shows or hides (and once after the first page read); main thread. */
+    var onVisibility: ((Boolean) -> Unit)? = null
+    private var lastVisible: Boolean? = null
+
+    /** Whether the window shows now; null before the first page read. */
+    val isVisible: Boolean? get() = lastVisible
+
     data class Placement(val x: Int, val y: Int, val side: Int)
 
     /** How a window hides when its page is not showing. */
@@ -93,6 +100,10 @@ internal class Mg4ClusterSquare private constructor(
             tabLogged = true
         }
         tab = next
+        if (visible != lastVisible) {
+            lastVisible = visible
+            runCatching { onVisibility?.invoke(visible) }
+        }
         val (x, y) = if (visible) shownX to shownY else hiddenPosition(hide, shownX, shownY)
         val alpha = if (visible || hide == Hide.PARK) 1f else 0f
         if (params.x == x && params.y == y && params.alpha == alpha) return

@@ -25,8 +25,27 @@ class CarPlaySongStateTest {
         state.accept(update { group(0) { string(1, "Song"); string(12, "Artist") } })
         // Pause alone: the song stays.
         assertEquals(CarPlaySong("Song", "Artist", null, playing = false), state.accept(update { group(1) { u8(0, 2) } }) ?: state.current())
-        // Elapsed time alone changes nothing.
-        assertNull(state.accept(update { group(1) { u32(1, 1_000L) } }))
+    }
+
+    @Test
+    fun playbackPositionMovesOnWhilePlaying() {
+        var now = 10_000L
+        val state = CarPlaySongState { now }
+        state.accept(update { group(0) { string(1, "Song"); u32(4, 200_000L) }; group(1) { u8(0, 1); u32(1, 30_000L) } })
+        val song = state.current()!!
+        assertEquals(200_000L, song.durationMs)
+        assertEquals(30_000L, song.positionMs(now))
+        now += 5_000L
+        assertEquals(35_000L, song.positionMs(now))
+        // Never past the end.
+        assertEquals(200_000L, song.positionMs(now + 1_000_000L))
+        // Paused: the position stays where the iPhone said.
+        val paused = state.accept(update { group(1) { u8(0, 2); u32(1, 36_000L) } })!!
+        assertEquals(36_000L, paused.positionMs(now + 60_000L))
+        // A new song forgets the old length and position.
+        state.accept(update { group(0) { string(1, "Next") } })
+        assertNull(state.current()?.durationMs)
+        assertNull(state.current()?.positionMs(now))
     }
 
     @Test

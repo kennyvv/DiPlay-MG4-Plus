@@ -153,6 +153,25 @@ Needs the MG4 Launcher (`nl.mg4launcher`) installed, signed with the same platfo
 | L2 | Press play/pause, next, previous on the launcher's media card | CarPlay follows | `launcher button PLAY sent=true` (etc.) |
 | L3 | Wi-Fi audio mode: play the radio from the launcher, then pick CarPlay as the source | CarPlay music comes back | `launcher take_focus asked=true audio=wifi` |
 | L4 | Wi-Fi audio mode, connected | The launcher's status bar shows the iPhone's name | none (launcher side) |
+| L5 | Connected, iPhone on the wireless pad, then off it | The launcher shows the iPhone's battery and a charging mark that goes away. If the log has no `iPhone power:` line at all, the iPhone doesn't send its battery over wireless CarPlay | `iPhone power: battery=..% charging=charging charger=true` |
+| L6 | Play a song, skip forward in it on the iPhone | The launcher's position follows | none (launcher side) |
+
+## M. CarPlay screen and audio hand-over (DiPlay-MG4 Plus)
+
+Settings > Experimental. The `modesChanged` lines come with both switches off too; they show what the iPhone says it holds.
+
+| # | Step | Pass | Log lines |
+|---|---|---|---|
+| M1 | Both switches off. Connect, play music, start Apple Maps directions, ask Siri something, make a short call | One `CarPlay modes: iPhone reports` line for each change. Siri shows `speech=iPhone(speaking)` or `(listening)`, directions `turnByTurn=iPhone`, the call `phoneCall=iPhone` | `CarPlay modes: iPhone reports screen=... mainAudio=... raw=[...]` |
+| M2 | **Tell iPhone when CarPlay is hidden** on. Leave CarPlay for the car's home screen for 10 s, then go back | CarPlay is back at once with a sharp picture, no black screen or reconnect | `CarPlay modes: CarPlay hidden, the car takes the screen`, then `sent screen take ... ok=true`, `iPhone reports screen=car`; on return `CarPlay shown`, `sent screen untake`, `screen=iPhone` |
+| M3 | M2 on. Engage reverse while CarPlay is on screen, then drive | The camera shows; afterwards CarPlay comes back by itself or with one tap | as M2 |
+| M4 | **Hand CarPlay audio to the car's sources** on, Wi-Fi audio. Play CarPlay music, then start the radio | The iPhone pauses (CarPlay's Now Playing shows paused); only the radio is heard | `focus lost, the car takes the sound`, `sent mainAudio take`, `iPhone reports ... mainAudio=car` |
+| M5 | After M4, press play in CarPlay | CarPlay music plays and the radio stops | `iPhone reports ... mainAudio=iPhone`, `the iPhone took the sound back, car audio focus asked again=true` |
+| M6 | After M4, pick CarPlay as the source on the launcher (or the car's source button) | The car switches back to CarPlay; CarPlay may need a press of play | `focus back, the sound goes back to the iPhone`, `sent mainAudio untake` |
+| M7 | M4 on. Play CarPlay music, let the car's own navigation or a car chime speak | CarPlay music pauses only for the moment and carries on | `the car borrows the sound`, then `unborrow` |
+| M8 | Dashboard song card on, play a song | Under the title a thin bar and "1:23 / 3:45" that move on every second; pausing stops them. The cover sits in a soft glow of its own colours | none |
+| M10 | **Recheck the car's audio source** on. With music playing on the iPhone, start the car (or connect CarPlay) several times | Music is heard at every connect without pausing. If one is silent, note the time and save the report | `Car source: com.shihab.diplay.hudtest ...` at each connect; any `plays instead of CarPlay music` line shows the case this covers |
+| M9 | Map on the dashboard and **Pause the dashboard map off its page** on. Navigate with Apple Maps, switch the cluster to its Music page for a minute, then back to Navigation | The map is back on the Navigation page within about a second and follows the route | `Cluster map: stopUI reason=cluster page`, no `stream=111` stats while paused, then `Cluster map: showUI` and stats again |
 
 ## Known risks to check in code before release
 

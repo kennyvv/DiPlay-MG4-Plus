@@ -51,6 +51,10 @@ Off by default, on SWI68 and SWI165 only.
 | Feature | What it does | Car test |
 |---|---|---|
 | **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
+| **Tell iPhone when CarPlay is hidden (test)** | When you leave CarPlay for the car's own screens, the iPhone is told the car has the screen (CarPlay's own `changeModes`, as the car's built-in CarPlay does), and gets it back when you return | Not yet tried |
+| **Hand CarPlay audio to the car's sources (test)** | Wi-Fi audio: when the radio or Bluetooth music takes over, the iPhone is told the car has the sound and pauses; a short interruption only borrows it. Playing something in CarPlay again switches the car back | Not yet tried |
+| **Recheck the car's audio source (test)** | If CarPlay music is silent at connect because the car keeps another source although CarPlay has the sound, DiPlay asks the car again after 2 s, as a pause and play does | Not yet tried |
+| **Pause the dashboard map off its page (test)** | While the cluster is not on its Navigation page, the iPhone stops drawing the dashboard map (less work for the car, less battery on the iPhone); it draws again when you go back | Not yet tried |
 | **Use car's MFi chip (test)** | Authenticates with the car's own Apple MFi chip instead of the identity built into the app (from andrew-snape's 0.4.0). If the chip can't be used, the connection uses the built-in identity and the report says why | Not yet tried |
 
 See [CHANGELOG.md](CHANGELOG.md) (the `swi68` entries) for the details of each.

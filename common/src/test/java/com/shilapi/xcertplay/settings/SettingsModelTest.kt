@@ -38,9 +38,15 @@ class SettingsModelTest {
         assertTrue(SettingRow.CLUSTER_MAP.appliesOnReconnect)
     }
 
-    @Test fun experimentalHoldsLanesAndTheCarMfiChip() {
+    @Test fun experimentalHoldsLanesTheCarMfiChipAndCarPlayModes() {
+        assertFalse(SettingRow.MODES_SCREEN.appliesOnReconnect)
+        assertFalse(SettingRow.MODES_AUDIO.appliesOnReconnect)
         assertEquals(
-            listOf(SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP),
+            listOf(
+                SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP, SettingRow.MODES_SCREEN, SettingRow.MODES_AUDIO,
+                SettingRow.RECHECK_CAR_SOURCE,
+                SettingRow.CLUSTER_MAP_PAUSE,
+            ),
             rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165)),
         )
         assertTrue(rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI69)).isEmpty())

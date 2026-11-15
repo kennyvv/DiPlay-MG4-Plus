@@ -57,6 +57,10 @@ object AirPlayPersistence {
     private const val KEY_WHEEL_FLIP_UP_DOWN = "mg4_wheel_flip_up_down"
     private const val KEY_WHEEL_FLIP_LEFT_RIGHT = "mg4_wheel_flip_left_right"
     private const val KEY_USE_CAR_MFI = "use_car_mfi_chip"
+    private const val KEY_MODES_SCREEN = "carplay_modes_screen"
+    private const val KEY_MODES_AUDIO = "carplay_modes_audio"
+    private const val KEY_CLUSTER_MAP_PAUSE = "mg4_cluster_map_pause"
+    private const val KEY_RECHECK_CAR_SOURCE = "mg4_recheck_car_source"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -292,6 +296,42 @@ object AirPlayPersistence {
 
     fun saveUseCarMfiChip(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_USE_CAR_MFI, enabled).apply()
+    }
+
+    /** Experimental (MG4): tell the iPhone the car has the screen while CarPlay is hidden (changeModes). Off by default. */
+    fun loadModesScreen(context: Context): Boolean =
+        Mg4FirmwareProfile.detect().isMg4 &&
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_SCREEN, false)
+
+    fun saveModesScreen(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MODES_SCREEN, enabled).apply()
+    }
+
+    /** Experimental (MG4, Wi-Fi audio): hand CarPlay's audio to the car's sources and back (changeModes). Off by default. */
+    fun loadModesAudio(context: Context): Boolean =
+        Mg4FirmwareProfile.detect().isMg4 &&
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_AUDIO, false)
+
+    fun saveModesAudio(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MODES_AUDIO, enabled).apply()
+    }
+
+    /** Experimental (MG4): stop the iPhone drawing the dashboard map while the cluster is off its Navigation page. Off by default. */
+    fun loadClusterMapPause(context: Context): Boolean =
+        Mg4FirmwareProfile.detect().isMg4 &&
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_MAP_PAUSE, false)
+
+    /** Experimental (MG4): ask for focus again when the car plays another source while DiPlay holds focus. Off by default. */
+    fun loadRecheckCarSource(context: Context): Boolean =
+        Mg4FirmwareProfile.detect().isMg4 &&
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_RECHECK_CAR_SOURCE, false)
+
+    fun saveRecheckCarSource(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_RECHECK_CAR_SOURCE, enabled).apply()
+    }
+
+    fun saveClusterMapPause(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_CLUSTER_MAP_PAUSE, enabled).apply()
     }
 
     /** Steering-wheel joystick for CarPlay ([CarPlayWheelService]), off by default. */

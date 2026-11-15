@@ -78,6 +78,11 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     WHEEL_UP_DOWN(RowKind.SEGMENTED),
     WHEEL_LEFT_RIGHT(RowKind.SEGMENTED),
     CAR_MFI_CHIP(RowKind.SWITCH, true),
+    // Both take effect straight away: the session checks the switch on every change.
+    MODES_SCREEN(RowKind.SWITCH),
+    MODES_AUDIO(RowKind.SWITCH),
+    CLUSTER_MAP_PAUSE(RowKind.SWITCH),
+    RECHECK_CAR_SOURCE(RowKind.SWITCH),
     // Turning location on asks for permission and reconnects by itself, as before.
     SEND_LOCATION(RowKind.SWITCH),
     VIDEO_WHILE_PARKED(RowKind.SWITCH, true),
@@ -171,6 +176,8 @@ internal object SettingsLayout {
         SettingsCategory.EXPERIMENTAL -> listOf(
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
             SettingsGroup("mfi", listOf(SettingRow.CAR_MFI_CHIP)),
+            SettingsGroup("carplay_modes", listOf(SettingRow.MODES_SCREEN, SettingRow.MODES_AUDIO, SettingRow.RECHECK_CAR_SOURCE)),
+            SettingsGroup("cluster_map_pause", listOf(SettingRow.CLUSTER_MAP_PAUSE)),
         ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),

@@ -523,6 +523,12 @@
     <string name="wheel_left_right">Joystick left and right</string>
     <string name="wheel_direction_normal">Normal</string>
     <string name="wheel_direction_flipped">Flipped</string>
+    <string name="carplay_modes_screen">Tell iPhone when CarPlay is hidden (test)</string>
+    <string name="carplay_modes_audio">Hand CarPlay audio to the car’s sources (test)</string>
+    <string name="recheck_car_source">Recheck the car’s audio source (test)</string>
+    <string name="cluster_map_pause">Pause the dashboard map off its page (test)</string>
+    <string name="settings_footer_cluster_map_pause">While the dashboard is not on its Navigation page, the iPhone is asked to stop drawing the dashboard map, and to draw it again when you go back. Saves work on the car and battery on the iPhone. Needs Map on the dashboard. Takes effect at the next page change.</string>
+    <string name="settings_footer_carplay_modes">CarPlay’s own way for the car and the iPhone to hand over the screen and the sound, as the car’s built-in CarPlay does. Hidden: when you leave CarPlay for the car’s screens, the iPhone is told the car has the screen, and gets it back when you return. Audio (Wi-Fi audio): when the radio or Bluetooth music takes over, the iPhone is told the car has the sound and pauses; a short interruption borrows it. When you play something in CarPlay again, the car switches back to CarPlay. Recheck: if CarPlay music is silent at connect because the car keeps playing another source although CarPlay has the sound, CarPlay asks the car again after 2 seconds, as pausing and playing does. All take effect straight away.</string>
     <string name="use_car_mfi_chip">Use car’s MFi chip (test)</string>
     <string name="settings_footer_car_mfi">Uses the car’s own Apple authentication chip to prove to the iPhone that this is a licensed accessory, instead of the identity built into the app. Applies after you reconnect. If the chip can’t be used, the app says so in the report and uses its own identity for that connection. If CarPlay won’t connect, turn it off. Off by default and not yet tried in the car.</string>
     <string name="settings_header_appearance">Appearance</string>

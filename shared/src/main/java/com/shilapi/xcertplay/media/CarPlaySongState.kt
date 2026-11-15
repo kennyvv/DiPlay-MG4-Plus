@@ -11,7 +11,20 @@ data class CarPlaySong(
     val playing: Boolean,
     /** The artwork file transfer that carries this song's cover, when the iPhone named one. */
     val artworkId: Int? = null,
-)
+    /** Track length (MediaItemPlaybackDurationInMilliseconds), when the iPhone sent it. */
+    val durationMs: Long? = null,
+    /** Position when the iPhone last reported it (PlaybackElapsedTimeInMilliseconds). */
+    val elapsedMs: Long? = null,
+    /** [android.os.SystemClock.elapsedRealtime] when [elapsedMs] arrived; the iPhone reports only on changes. */
+    val elapsedAtMs: Long? = null,
+) {
+    /** The position now: [elapsedMs] moved on while playing, capped at [durationMs]. */
+    fun positionMs(nowMs: Long): Long? {
+        val at = elapsedMs ?: return null
+        val moved = if (playing && elapsedAtMs != null) at + (nowMs - elapsedAtMs).coerceAtLeast(0) else at
+        return durationMs?.let { moved.coerceAtMost(it) } ?: moved
+    }
+}
 
 /**
  * The CarPlay song from iAP2 NowPlayingUpdate (0x5001): title (1), album (6), artist (12) and the
@@ -21,12 +34,15 @@ data class CarPlaySong(
  *
  * Ported from upstream DiPlay's `ClusterSongState` (shihabal3amri/DiPlay), adding the album.
  */
-class CarPlaySongState {
+class CarPlaySongState(private val clock: () -> Long = { android.os.SystemClock.elapsedRealtime() }) {
     private var title: String? = null
     private var artist: String? = null
     private var album: String? = null
     private var artworkId: Int? = null
     private var playing = false
+    private var durationMs: Long? = null
+    private var elapsedMs: Long? = null
+    private var elapsedAtMs: Long? = null
     private var last: CarPlaySong? = null
 
     /** The song after [frame], or null when it did not change; [current] holds the song itself. */
@@ -36,7 +52,12 @@ class CarPlaySongState {
         runCatching { body.optionalGroup(ITEM) }.getOrNull()?.let { item ->
             val nextTitle = runCatching { item.optionalString(TITLE) }.getOrNull()
             if (nextTitle != null) {
-                if (nextTitle != title) artworkId = null
+                if (nextTitle != title) {
+                    artworkId = null
+                    durationMs = null
+                    elapsedMs = null
+                    elapsedAtMs = null
+                }
                 title = nextTitle
                 if (nextTitle.isBlank()) {
                     artist = null
@@ -48,14 +69,22 @@ class CarPlaySongState {
                 runCatching { item.optionalString(ARTIST) }.getOrNull()?.let { artist = it }
                 runCatching { item.optionalString(ALBUM) }.getOrNull()?.let { album = it }
                 runCatching { item.optionalU8(ARTWORK_ID) }.getOrNull()?.let { artworkId = it }
+                runCatching { item.optionalU32(DURATION) }.getOrNull()?.let { durationMs = it }
             }
+        }
+        runCatching { body.optionalGroup(PLAYBACK)?.optionalU32(ELAPSED) }.getOrNull()?.let {
+            elapsedMs = it
+            elapsedAtMs = clock()
         }
         runCatching { body.optionalGroup(PLAYBACK)?.optionalU8(STATUS) }.getOrNull()?.let { status ->
             playing = status == STATUS_PLAYING || status == STATUS_SEEK_FORWARD || status == STATUS_SEEK_BACKWARD
         }
         val name = title?.trim()?.takeIf { it.isNotEmpty() }
         val next = name?.let {
-            CarPlaySong(it, artist?.trim()?.takeIf(String::isNotEmpty), album?.trim()?.takeIf(String::isNotEmpty), playing, artworkId)
+            CarPlaySong(
+                it, artist?.trim()?.takeIf(String::isNotEmpty), album?.trim()?.takeIf(String::isNotEmpty), playing, artworkId,
+                durationMs, elapsedMs, elapsedAtMs,
+            )
         }
         if (next == last) return null
         last = next
@@ -72,6 +101,9 @@ class CarPlaySongState {
         album = null
         artworkId = null
         playing = false
+        durationMs = null
+        elapsedMs = null
+        elapsedAtMs = null
         last = null
     }
 
@@ -82,6 +114,8 @@ class CarPlaySongState {
         private const val ALBUM = 6
         private const val ARTIST = 12
         private const val ARTWORK_ID = 26
+        private const val DURATION = 4
+        private const val ELAPSED = 1
         private const val PLAYBACK = 1
         private const val STATUS = 0
         private const val STATUS_PLAYING = 1

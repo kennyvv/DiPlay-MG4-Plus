@@ -47,6 +47,9 @@ internal class AudioFocusCoordinator(
 ) {
     private data class Entry(val channel: AudioChannel, val attributes: AudioAttributes)
 
+    /** Told about every focus change with whether the focus was held for music; main thread. */
+    @Volatile var focusChangeListener: ((change: Int, media: Boolean) -> Unit)? = null
+
     private val manager = context?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     private val active = LinkedHashMap<Any, Entry>()
     private val callTracks = HashSet<Any>()
@@ -66,7 +69,13 @@ internal class AudioFocusCoordinator(
                 AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> lost = true
             }
         }
+        val media = synchronized(this) { requestedChannel == AudioChannel.MEDIA }
+        runCatching { focusChangeListener?.invoke(change, media) }
     }
+
+    /** Another source has the car's audio since the last loss (no gain since). */
+    @Synchronized
+    fun hasLostFocus(): Boolean = lost
 
     /**
      * Ask for focus again after another source took it, so the car switches back to CarPlay
@@ -242,6 +251,14 @@ class AndroidMediaSink(
     /** Switch the car back to CarPlay audio (Wi-Fi audio): ask for focus again. */
     fun reacquireAudioFocus(): Boolean = audioFocusCoordinator.reacquire()
 
+    /** Every audio focus change of CarPlay's own request, with whether it was held for music; main thread. */
+    var audioFocusListener: ((change: Int, media: Boolean) -> Unit)?
+        get() = audioFocusCoordinator.focusChangeListener
+        set(value) { audioFocusCoordinator.focusChangeListener = value }
+
+    /** True while another car source has the audio since CarPlay last lost focus. */
+    fun audioFocusLost(): Boolean = audioFocusCoordinator.hasLostFocus()
+
     private val screenStateLock = Any()
     private val activeScreenTypes = mutableSetOf<Int>()
     private val defaultSurface = surface
@@ -335,6 +352,8 @@ class AndroidMediaSink(
             return
         }
         audioRenderer(id, format).start()
+        // Music started: the host's media-key and car-source logic need to know (onAudioStopped clears it).
+        if (format.audioType.equals("media", ignoreCase = true)) updateMediaAudio(id, true)
     }
 
     override fun onAudioRtp(id: AudioStreamId, format: AudioFormat, rtp: ByteArray, sample: Int) {
