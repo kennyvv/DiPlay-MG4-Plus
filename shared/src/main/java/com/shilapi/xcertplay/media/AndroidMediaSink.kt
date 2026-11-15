@@ -52,16 +52,36 @@ internal class AudioFocusCoordinator(
     private val callTracks = HashSet<Any>()
     private var request: AudioFocusRequest? = null
     private var requestedChannel: AudioChannel? = null
+    /** Another source (the radio, Bluetooth Music) took focus; the car plays that source now. */
+    private var lost = false
     private val listener = AudioManager.OnAudioFocusChangeListener { change ->
         synchronized(this) {
             runCatching { report("Audio: focus change=$change activeTracks=${active.size}") }
             when (change) {
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> setVolume(DUCKED_VOLUME)
-                AudioManager.AUDIOFOCUS_GAIN -> setVolume(FULL_VOLUME)
+                AudioManager.AUDIOFOCUS_GAIN -> { lost = false; setVolume(FULL_VOLUME) }
                 // Keep CarPlay audio running on permanent or transient loss. Some head units
-                // do not send a later gain callback after taking focus back.
+                // do not send a later gain callback after taking focus back. Remember the loss:
+                // the next start of CarPlay music asks for focus again.
+                AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> lost = true
             }
         }
+    }
+
+    /**
+     * Ask for focus again after another source took it, so the car switches back to CarPlay
+     * audio. True when a request was made (there was a CarPlay track to play).
+     */
+    @Synchronized
+    fun reacquire(): Boolean {
+        if (!enabled || manager == null || active.isEmpty()) return false
+        request?.let { manager.abandonAudioFocusRequest(it) }
+        request = null
+        requestedChannel = null
+        lost = false
+        refreshRequest()
+        runCatching { report("Audio: focus asked again (switch back to CarPlay)") }
+        return true
     }
 
     @Synchronized
@@ -93,6 +113,14 @@ internal class AudioFocusCoordinator(
             return
         }
         active[track] = Entry(channel, attributes)
+        if (lost && channel != AudioChannel.NAVIGATION) {
+            // CarPlay music starts again after the radio or another source took the car's audio.
+            request?.let { manager.abandonAudioFocusRequest(it) }
+            request = null
+            requestedChannel = null
+            lost = false
+            runCatching { report("Audio: focus asked again, $channel started after a loss") }
+        }
         refreshRequest(channel)
     }
 
@@ -211,6 +239,9 @@ class AndroidMediaSink(
         onAudioDiagnostic,
         callMode = Build.VERSION.SDK_INT == Build.VERSION_CODES.P && audioMode == AudioMode.CARPLAY_WIFI,
     )
+    /** Switch the car back to CarPlay audio (Wi-Fi audio): ask for focus again. */
+    fun reacquireAudioFocus(): Boolean = audioFocusCoordinator.reacquire()
+
     private val screenStateLock = Any()
     private val activeScreenTypes = mutableSetOf<Int>()
     private val defaultSurface = surface

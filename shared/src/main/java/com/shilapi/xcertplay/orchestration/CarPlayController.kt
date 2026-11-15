@@ -235,6 +235,17 @@ class CarPlayController(
     /** The song known so far, for a listener that attaches mid-session. */
     fun currentSong(): com.shilapi.xcertplay.media.CarPlaySong? = synchronized(songState) { songState.current() }
 
+    @Volatile private var airPlayDeviceName: String? = null
+
+    /**
+     * The phone's name for the MG4 Launcher's status bar: the name the iPhone gave over AirPlay,
+     * else its Bluetooth name. During Wi-Fi CarPlay the car's own Bluetooth music (and with
+     * CarPlay-only calls also hands-free) is released, so the car itself reports no device.
+     */
+    @android.annotation.SuppressLint("MissingPermission")
+    fun phoneName(): String? = airPlayDeviceName?.takeIf { it.isNotBlank() }
+        ?: runCatching { wirelessBluetoothDevice?.name }.getOrNull()?.takeIf { it.isNotBlank() }
+
     /** Video in car; set before [start] to offer it to the iPhone (with AirPlayConfig.videoInCar). */
     @Volatile var videoListener: CarPlayVideoListener? = null
     @Volatile private var videoGate: VideoInCarGate? = null
@@ -331,6 +342,7 @@ class CarPlayController(
                 "AirPlay device info name=${info.name} deviceId=${info.deviceId} " +
                     "wifiMac=${info.wifiMac} model=${info.model}",
             )
+            airPlayDeviceName = info.name
             uiListener?.onDeviceInfo(session, info)
         }
 

@@ -2774,12 +2774,27 @@ class CarPlayHostActivity : ComponentActivity() {
     private fun attachClusterSong(target: CarPlayController) {
         val enabled = AirPlayPersistence.loadClusterSong(this) &&
             Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
-        target.songListener = if (enabled) { song -> runOnUiThread { Mg4ClusterSong.update(song) } } else null
+        // The MG4 Launcher home screen gets the song too, when it is installed.
+        val launcher = LauncherBridge.wanted(this)
+        target.songListener = if (enabled || launcher) { song ->
+            if (launcher) LauncherBridge.onSong(song)
+            if (enabled) runOnUiThread { Mg4ClusterSong.update(song) }
+        } else null
         // Covers arrive only when the session was opened with album art on.
-        target.artworkListener = if (enabled) Mg4ClusterSong::updateArtwork else null
+        target.artworkListener = if (enabled || launcher) { transfer ->
+            if (launcher) LauncherBridge.onArtwork(transfer)
+            if (enabled) Mg4ClusterSong.updateArtwork(transfer)
+        } else null
         runOnUiThread {
             if (enabled) Mg4ClusterSong.attach(this, target.currentSong(), ::appendLog) else Mg4ClusterSong.detach()
+            if (launcher) {
+                LauncherBridge.audioMode = if (sessionAudioMode == AudioMode.CARPLAY_WIFI) "wifi" else "bluetooth"
+                LauncherBridge.takeFocus = { sink?.reacquireAudioFocus() ?: false }
+                LauncherBridge.attach(this, target)
+                appendLog("MG4 Launcher: sending the CarPlay song")
+            }
         }
+        if (launcher) target.lastArtwork()?.let(LauncherBridge::onArtwork)
         if (enabled) target.lastArtwork()?.let(Mg4ClusterSong::updateArtwork)
     }
 
@@ -2800,10 +2815,11 @@ class CarPlayHostActivity : ComponentActivity() {
         runOnUiThread { if (drawn) Mg4ClusterLaneStrip.attach(this, ::appendLog) else Mg4ClusterLaneStrip.detach() }
     }
 
-    /** Album art over iAP2 file transfers, only for the cluster song card it feeds. */
+    /** Album art over iAP2 file transfers, for the cluster song card or the MG4 Launcher home screen. */
     private fun albumArtEnabled(): Boolean =
-        AirPlayPersistence.loadClusterSong(this) && AirPlayPersistence.loadClusterAlbumArt(this) &&
-            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165
+        (AirPlayPersistence.loadClusterSong(this) && AirPlayPersistence.loadClusterAlbumArt(this) &&
+            Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165) ||
+            LauncherBridge.wanted(this)
 
     /** The experimental cluster map, on the eh32 cluster (SWI68, SWI165) only. */
     private fun clusterMapContent(): CarPlayClusterDisplay.Content? =
@@ -3078,6 +3094,8 @@ class CarPlayHostActivity : ComponentActivity() {
     private fun createStatusReporter(
         controllerGeneration: Int,
     ): (CarPlayStatus) -> Unit = { status ->
+        // The phone's name becomes known during start-up: pass it on to the launcher.
+        LauncherBridge.refresh()
         if (!menuOpen && controllerGeneration == restartGeneration) {
             updateHotspotStatus(status)
             val description = status.describe()
@@ -3653,6 +3671,7 @@ class CarPlayHostActivity : ComponentActivity() {
             Mg4ClusterMap.detach()
             Mg4ClusterSong.detach()
             Mg4ClusterLaneStrip.detach()
+            LauncherBridge.detach(oldController)
         }
         controller = null
         sink = null

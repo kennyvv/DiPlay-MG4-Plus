@@ -143,6 +143,17 @@ Settings > Developer. Turn on only the switch for the step, then reconnect CarPl
 | K2 | Only if K1 shows the chip working: Settings > Experimental > **Use car's MFi chip (test)** on, reconnect CarPlay | CarPlay connects as before; Siri and a call work | `Car MFi chip: in use for this session`. If it can't be used: `not used, ...; using the bundled identity`. Turn it off if CarPlay won't connect |
 | K3 | Steering-wheel joystick on, CarPlay control on (hold centre). Push up, then down, on a list | Up moves the highlight up. If not, flip **Joystick up and down** and try again | `Wheel:` lines |
 
+## L. MG4 Launcher bridge (DiPlay-MG4 Plus)
+
+Needs the MG4 Launcher (`nl.mg4launcher`) installed, signed with the same platform key.
+
+| # | Step | Pass | Log lines |
+|---|---|---|---|
+| L1 | Wireless CarPlay, play music | The launcher's media card shows the song, artist and cover, and follows track changes | `DiPlay-Launcher: launcher found: sending the CarPlay song` |
+| L2 | Press play/pause, next, previous on the launcher's media card | CarPlay follows | `launcher button PLAY sent=true` (etc.) |
+| L3 | Wi-Fi audio mode: play the radio from the launcher, then pick CarPlay as the source | CarPlay music comes back | `launcher take_focus asked=true audio=wifi` |
+| L4 | Wi-Fi audio mode, connected | The launcher's status bar shows the iPhone's name | none (launcher side) |
+
 ## Known risks to check in code before release
 
 | # | Risk | Why | What to check |

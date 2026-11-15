@@ -8,6 +8,12 @@ Settings changes from car tests (2026-11-14):
 - **Joystick direction.** New rows **Joystick up and down** and **Joystick left and right** (Normal or Flipped), read on every key press. Up and down are flipped by default, because pushing up moved CarPlay's highlight the wrong way in the car.
 - **Use car's MFi chip (test)**, in Settings > Experimental. Ported from andrew-snape's 0.4.0 (`7d9f4649`, with the 3.0-chip digest fix `8ba93c63` and the tests from `25b4f8b4`). On MG4 the app also probes the car's MFi chip at start and logs `Car MFi chip:` lines (read only). With the switch on, iAP2 and AirPlay authentication are signed by the car's chip; if it can't be used, the bundled identity is used and the log says why. Not yet tried in the car (the emulator has no chip: the probe fails cleanly and CarPlay connects as before). Test plan K1, K2.
 
+MG4 Launcher bridge (ported from the swi68 branch; not yet tried in the car, test plan L):
+
+- **Song, cover and buttons for the MG4 Launcher.** When `nl.mg4launcher` is installed, DiPlay sends the CarPlay song, artist, album, play state and cover to its home screen, and takes its play, pause, next, previous and "take audio focus" buttons. Broadcasts are limited to apps signed with the platform key (`nl.mg4launcher.permission.CARPLAY_BRIDGE`). Log tag `DiPlay-Launcher`.
+- **Phone name for the launcher.** In Wi-Fi audio mode DiPlay releases the car's Bluetooth music (and hands-free when calls are CarPlay-only), so the car reports no connected phone and the launcher's status bar went blank. DiPlay now also sends `device_name`: the name the iPhone gives over AirPlay, else its Bluetooth name.
+- **Audio focus after a loss.** The Wi-Fi audio sink asks for the car's audio focus again on the next play after losing it (for example after the radio played), and the launcher can ask for it directly.
+
 New in Plus, all under **Settings > Developer** (new page), MG4 only, each off by default and logged on the `Developer tests:` line at session start. Tried in the emulator (the car's original firmware, with an iPhone over Wi-Fi), not yet in the car: test plan section J.
 
 - **Developer page.** All test options and test tools moved there from Sound: Microphone (test), Siri microphone as PCM (test), Record microphone (test), plus the new items below. Echo suppression on calls stays in Sound.
