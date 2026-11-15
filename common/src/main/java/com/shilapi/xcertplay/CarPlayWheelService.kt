@@ -32,12 +32,20 @@ internal object CarPlayWheel {
      * highlight from element to element; a nudge there panned Apple Maps instead (car, 2026-11-08).
      * Left and right stay nudges, for rows and grids. The centre is the knob's button.
      */
-    fun knob(command: CarPlayWheelControl.Command): AirPlayKnobState = when (command) {
-        CarPlayWheelControl.Command.UP -> AirPlayKnobState(wheel = -1)
-        CarPlayWheelControl.Command.DOWN -> AirPlayKnobState(wheel = 1)
-        CarPlayWheelControl.Command.LEFT -> AirPlayKnobState(x = -NUDGE)
-        CarPlayWheelControl.Command.RIGHT -> AirPlayKnobState(x = NUDGE)
-        CarPlayWheelControl.Command.SELECT -> AirPlayKnobState(select = true)
+    fun knob(
+        command: CarPlayWheelControl.Command,
+        flipUpDown: Boolean = false,
+        flipLeftRight: Boolean = false,
+    ): AirPlayKnobState {
+        val v = if (flipUpDown) -1 else 1
+        val h = if (flipLeftRight) -1 else 1
+        return when (command) {
+            CarPlayWheelControl.Command.UP -> AirPlayKnobState(wheel = -1 * v)
+            CarPlayWheelControl.Command.DOWN -> AirPlayKnobState(wheel = 1 * v)
+            CarPlayWheelControl.Command.LEFT -> AirPlayKnobState(x = -NUDGE * h)
+            CarPlayWheelControl.Command.RIGHT -> AirPlayKnobState(x = NUDGE * h)
+            CarPlayWheelControl.Command.SELECT -> AirPlayKnobState(select = true)
+        }
     }
 
     private const val NUDGE = 127
@@ -121,7 +129,12 @@ class CarPlayWheelService : AccessibilityService() {
         if (result.replayCentre || result.command != null || result.modeChanged != null) main.removeCallbacks(longPress)
         if (result.replayCentre) replayCentre()
         result.command?.let { command ->
-            val sent = CarPlayWheel.controller?.sendKnob(CarPlayWheel.knob(command)) ?: false
+            val knob = CarPlayWheel.knob(
+                command,
+                flipUpDown = AirPlayPersistence.loadWheelFlipUpDown(this),
+                flipLeftRight = AirPlayPersistence.loadWheelFlipLeftRight(this),
+            )
+            val sent = CarPlayWheel.controller?.sendKnob(knob) ?: false
             if (!sent) CarPlayWheel.log("Wheel: $command not sent, no CarPlay session")
         }
         result.modeChanged?.let(::announce)

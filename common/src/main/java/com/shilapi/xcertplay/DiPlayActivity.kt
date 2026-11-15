@@ -1170,6 +1170,11 @@ class DiPlayActivity : ComponentActivity() {
         appendLine("Session: ${if (CarPlayBackgroundSession.active) "active" else if (CarPlayBackgroundSession.hasSession()) "connecting" else "stopped"}")
         appendLine("Head-unit board: ${Build.BOARD}; hardware: ${Build.HARDWARE}; build: ${Build.DISPLAY}")
         if (Mg4FirmwareProfile.detect().isMg4) appendLine("Day/night: ${DayNightProbe.snapshot(appContext)}")
+        if (Mg4FirmwareProfile.detect().isMg4) {
+            appendLine("Car MFi chip: ${com.shilapi.xcertplay.mfi.CarMfiProbe.summary}; " +
+                "setting ${if (AirPlayPersistence.loadUseCarMfiChip(appContext)) "on" else "off"}" +
+                (com.shilapi.xcertplay.mfi.CarMfiState.failure?.let { "; failed this run: $it" } ?: ""))
+        }
         appendLine(
             "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(appContext)) "PCM" else "Opus"} " +
                 "recording=${if (AirPlayPersistence.loadMicrophoneRecording(appContext)) "on" else "off"} " +

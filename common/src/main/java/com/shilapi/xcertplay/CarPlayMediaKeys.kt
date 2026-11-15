@@ -87,6 +87,9 @@ internal object CarPlayMediaKeys {
 
     /** The voice key already opened Siri on this press, while held. */
     private var voiceHeld = false
+
+    /** Developer test switch: Siri prewarm (siriAction 1) when the voice key goes down, as stock does. */
+    @Volatile var siriPrewarm = false
     private var rawKeyReceiver: BroadcastReceiver? = null
     private var callsOverCarPlay = false
 
@@ -231,6 +234,10 @@ internal object CarPlayMediaKeys {
             }
         }
         val target = synchronized(this) { controller }
+        if (siriPrewarm && code == RAW_VOICE_KEY && down && !longPress && action == null) {
+            val warmed = target?.prewarmSiri() ?: false
+            report("Wheel raw key: code=$code down=true -> Siri prewarm sent=$warmed")
+        }
         val sent = when (action) {
             RawKeyAction.CALL_HOOK -> target?.sendTelephonyButton(TELEPHONY_HOOK_SWITCH) ?: false
             RawKeyAction.SIRI -> target?.requestSiri() ?: false

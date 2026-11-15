@@ -452,6 +452,7 @@ class CarPlayHostActivity : ComponentActivity() {
             com.shilapi.xcertplay.vehicle.VehicleIntegration.setReportLog(::appendLog)
             dayNightProbe = DayNightProbe(applicationContext, mainHandler, ::appendLog).also { it.start() }
             wifiScanProbe = WifiScanProbe(applicationContext, mainHandler, ::appendLog).also { it.start() }
+            com.shilapi.xcertplay.mfi.CarMfiProbe.start(::appendLog)
         }
         advancedAudioChannelMappingSupported =
             resources.getBoolean(R.bool.config_advanced_audio_channel_mapping)
@@ -3240,11 +3241,30 @@ class CarPlayHostActivity : ComponentActivity() {
                         else -> null
                     }
                 com.shilapi.xcertplay.media.CallEchoSuppression.enabled = AirPlayPersistence.loadCallEchoSuppression(this)
+                com.shilapi.xcertplay.media.StockCallAudio.packageName = packageName
+                com.shilapi.xcertplay.media.StockCallAudio.enabled =
+                    Mg4FirmwareProfile.detect().isMg4 && AirPlayPersistence.loadCarCallPath(this)
+                val mg4Tests = Mg4FirmwareProfile.detect().isMg4
+                fun test(key: String) = mg4Tests && AirPlayPersistence.loadTestSwitch(this, key)
+                com.shilapi.xcertplay.media.StockCallAudio.siriEnabled = test(AirPlayPersistence.KEY_SIRI_CAR_MIC)
+                CarPlayMediaKeys.siriPrewarm = test(AirPlayPersistence.KEY_SIRI_PREWARM)
+                com.shilapi.xcertplay.media.AudioFocusOptions.siriOwnFocus = test(AirPlayPersistence.KEY_SIRI_OWN_FOCUS)
+                com.shilapi.xcertplay.media.NavigationDucking.enabled = test(AirPlayPersistence.KEY_NAV_DUCKING)
+                com.shilapi.xcertplay.media.NavigationDucking.prepare(this) { line -> appendLog(line) }
+                appendLog(
+                    "Developer tests: carCallPath=${com.shilapi.xcertplay.media.StockCallAudio.enabled} " +
+                        "siriCarMic=${com.shilapi.xcertplay.media.StockCallAudio.siriEnabled} " +
+                        "siriPrewarm=${CarPlayMediaKeys.siriPrewarm} " +
+                        "siriOwnFocus=${com.shilapi.xcertplay.media.AudioFocusOptions.siriOwnFocus} " +
+                        "navDucking=${com.shilapi.xcertplay.media.NavigationDucking.enabled} " +
+                        "carMfiChip=${AirPlayPersistence.loadUseCarMfiChip(this)}",
+                )
                 MicRecordings.sync(applicationContext)
                 appendLog(
                     "Microphone test: siriFormat=${if (AirPlayPersistence.loadSiriMicrophonePcm(this)) "PCM" else "Opus"} " +
                         "recording=${if (AirPlayPersistence.loadMicrophoneRecording(this)) "on" else "off"} " +
                         "callEcho=${if (AirPlayPersistence.loadCallEchoSuppression(this)) "on" else "off"} " +
+                        "carCallPath=${if (com.shilapi.xcertplay.media.StockCallAudio.enabled) com.shilapi.xcertplay.media.StockCallAudio.status() else "off"} " +
                         "callsOverCarPlayOnly=${if (AirPlayPersistence.loadCallsOverCarPlayOnly(this)) "on" else "off"}",
                 )
                 sessionAudioMode == com.shilapi.xcertplay.media.AudioMode.CARPLAY_WIFI
@@ -3253,6 +3273,7 @@ class CarPlayHostActivity : ComponentActivity() {
             clusterDirections = Mg4FirmwareProfile.detect().generation == Mg4FirmwareProfile.Generation.SWI165 &&
                 AirPlayPersistence.loadClusterDirections(this),
             albumArt = albumArtEnabled(),
+            useCarMfiChip = AirPlayPersistence.loadUseCarMfiChip(this),
         )
         controller = next
         CarPlayWheel.controller = next

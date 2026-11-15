@@ -50,6 +50,8 @@ interface AirPlayMediaHandler {
     fun onSessionClosed(session: AirPlaySession) {}
     fun setIapTunnelHandler(handler: ((BlockingDuplexByteStream) -> Boolean)?) {}
     fun onSetupResponseSent(session: AirPlaySession) {}
+    /** duckAudio (true) and unduckAudio (false): the iPhone marks the start and end of a navigation prompt. */
+    fun onAudioDuck(session: AirPlaySession, ducked: Boolean) {}
 }
 
 /**
@@ -232,6 +234,11 @@ class AirPlaySession(
     fun sendTelephony(index: Int) {
         sendHidReport(AirPlayHid.TELEPHONY_HID_UID, AirPlayHid.telephonyReport(index))
         sendHidReport(AirPlayHid.TELEPHONY_HID_UID, AirPlayHid.telephonyReport(0))
+    }
+
+    /** Siri prewarm (siriAction 1), sent when the voice button goes down, as the car's own CarPlay does. */
+    fun prewarmSiri() {
+        sendCommand(linkedMapOf("type" to "requestSiri", "params" to linkedMapOf("siriAction" to 1)))
     }
 
     fun invokeSiri() {
@@ -572,6 +579,10 @@ class AirPlaySession(
             runCatching { asMap(BplistCodec.decode(data)) }.getOrNull()
                 ?.let { listener.onRemoteControlMessage(this, streamId, it) }
             return RtspMessage.Response(status = 200)
+        }
+        when (type) {
+            "duckAudio" -> media.onAudioDuck(this, true)
+            "unduckAudio" -> media.onAudioDuck(this, false)
         }
         if (type == "requestUI" && string(params["url"]) == VideoInCar.UI_URL) {
             listener.onVideoPlaybackUiRequested(this)

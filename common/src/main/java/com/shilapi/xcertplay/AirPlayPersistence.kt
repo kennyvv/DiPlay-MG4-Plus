@@ -44,6 +44,7 @@ object AirPlayPersistence {
     private const val KEY_MIC_SOURCE = "microphone_source"
     private const val KEY_SIRI_MIC_PCM = "siri_microphone_pcm"
     private const val KEY_CALL_ECHO_SUPPRESSION = "call_echo_suppression"
+    private const val KEY_CAR_CALL_PATH = "car_call_path"
     private const val KEY_MIC_RECORDING = "microphone_recording"
     private const val KEY_VIDEO_COLOUR_RANGE = "video_colour_range"
     private const val KEY_CLUSTER_DIRECTIONS = "mg4_cluster_directions"
@@ -53,6 +54,9 @@ object AirPlayPersistence {
     private const val KEY_CLUSTER_ALBUM_ART = "mg4_cluster_album_art"
     private const val KEY_CLUSTER_LANES = "mg4_cluster_lanes"
     private const val KEY_CARPLAY_WHEEL = "mg4_carplay_wheel"
+    private const val KEY_WHEEL_FLIP_UP_DOWN = "mg4_wheel_flip_up_down"
+    private const val KEY_WHEEL_FLIP_LEFT_RIGHT = "mg4_wheel_flip_left_right"
+    private const val KEY_USE_CAR_MFI = "use_car_mfi_chip"
     private const val KEY_AUDIO_MODE = "audio_mode"
     private const val KEY_ADVANCED_AUDIO_CHANNEL_MAPPING = "advanced_audio_channel_mapping"
     private const val KEY_AUDIO_FOCUS_ENABLED = "audio_focus_enabled"
@@ -259,7 +263,38 @@ object AirPlayPersistence {
             .apply()
     }
 
-    /** Experimental steering-wheel joystick for CarPlay ([CarPlayWheelService]), off by default. */
+    /**
+     * Steering-wheel joystick direction in CarPlay mode. Up and down are flipped by default: the first
+     * car tests found pushing up moved CarPlay's highlight the wrong way (2026-11-14). A saved choice wins.
+     */
+    fun loadWheelFlipUpDown(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WHEEL_FLIP_UP_DOWN, true)
+
+    fun saveWheelFlipUpDown(context: Context, flipped: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_WHEEL_FLIP_UP_DOWN, flipped).apply()
+    }
+
+    fun loadWheelFlipLeftRight(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WHEEL_FLIP_LEFT_RIGHT, false)
+
+    fun saveWheelFlipLeftRight(context: Context, flipped: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_WHEEL_FLIP_LEFT_RIGHT, flipped).apply()
+    }
+
+    /**
+     * MG4 test: authenticate with the car's own MFi chip instead of the bundled identity. Off by
+     * default (not yet tried in the car). A saved choice wins; always off on other firmware.
+     */
+    fun loadUseCarMfiChip(context: Context): Boolean {
+        if (!Mg4FirmwareProfile.detect().isMg4) return false
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_USE_CAR_MFI, false)
+    }
+
+    fun saveUseCarMfiChip(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_USE_CAR_MFI, enabled).apply()
+    }
+
+    /** Steering-wheel joystick for CarPlay ([CarPlayWheelService]), off by default. */
     fun loadCarPlayWheel(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CARPLAY_WHEEL, false)
 
@@ -312,6 +347,27 @@ object AirPlayPersistence {
      */
     fun loadCallEchoSuppression(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CALL_ECHO_SUPPRESSION, true)
+
+    // Developer test switches (MG4), all off by default; read when CarPlay starts.
+    const val KEY_SIRI_CAR_MIC = "siri_car_mic"
+    const val KEY_SIRI_PREWARM = "siri_prewarm"
+    const val KEY_SIRI_OWN_FOCUS = "siri_own_focus"
+    const val KEY_NAV_DUCKING = "nav_ducking"
+
+    fun loadTestSwitch(context: Context, key: String): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, false)
+
+    fun saveTestSwitch(context: Context, key: String, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(key, enabled).apply()
+    }
+
+    /** Test: calls on the head unit's own phone output and microphone, for its echo canceller. Off by default. */
+    fun loadCarCallPath(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CAR_CALL_PATH, false)
+
+    fun saveCarCallPath(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_CAR_CALL_PATH, enabled).apply()
+    }
 
     fun saveCallEchoSuppression(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_CALL_ECHO_SUPPRESSION, enabled).apply()

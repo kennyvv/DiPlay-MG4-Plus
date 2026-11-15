@@ -7,7 +7,7 @@ import com.shilapi.xcertplay.Mg4FirmwareProfile
  * Which settings the MG4 Settings screen shows, and where. Plain Kotlin, so the layout for each
  * firmware can be unit-tested. [Mg4SettingsPage] turns it into views and reads and saves values.
  */
-internal enum class SettingsCategory { CONNECTION, DISPLAY, SOUND, CAR, APPS, EXPERIMENTAL, GENERAL, HELP, ABOUT }
+internal enum class SettingsCategory { CONNECTION, DISPLAY, SOUND, CAR, APPS, EXPERIMENTAL, GENERAL, HELP, DEVELOPER, ABOUT }
 
 internal enum class RowKind {
     /** On/off switch. */
@@ -57,6 +57,12 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     MICROPHONE(RowKind.PICKER, true),
     SIRI_MIC_PCM(RowKind.SWITCH, true),
     CALL_ECHO_SUPPRESSION(RowKind.SWITCH, true),
+    CAR_CALL_PATH(RowKind.SWITCH, true),
+    CALL_ECHO_TEST(RowKind.ACTION),
+    SIRI_CAR_MIC(RowKind.SWITCH, true),
+    SIRI_PREWARM(RowKind.SWITCH, true),
+    SIRI_OWN_FOCUS(RowKind.SWITCH, true),
+    NAV_DUCKING(RowKind.SWITCH, true),
     MIC_RECORDING(RowKind.SWITCH),
     SOUND_ADVANCED(RowKind.PAGE),
     NAVIGATION_CHANNEL(RowKind.LINK, true),
@@ -69,6 +75,9 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     CLUSTER_ALBUM_ART(RowKind.SWITCH, true),
     // Takes effect straight away: the key filter checks the switch on every press.
     CARPLAY_WHEEL(RowKind.SWITCH),
+    WHEEL_UP_DOWN(RowKind.SEGMENTED),
+    WHEEL_LEFT_RIGHT(RowKind.SEGMENTED),
+    CAR_MFI_CHIP(RowKind.SWITCH, true),
     // Turning location on asks for permission and reconnects by itself, as before.
     SEND_LOCATION(RowKind.SWITCH),
     VIDEO_WHILE_PARKED(RowKind.SWITCH, true),
@@ -136,11 +145,18 @@ internal object SettingsLayout {
             SettingsGroup("wifi_audio", listOf(SettingRow.WIFI_AUDIO)),
             SettingsGroup("calls", listOf(SettingRow.CALLS_OVER_CARPLAY)),
             SettingsGroup("buffer", listOf(SettingRow.MUSIC_BUFFER)),
-            SettingsGroup("microphone", listOf(SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.CALL_ECHO_SUPPRESSION, SettingRow.MIC_RECORDING)),
+            SettingsGroup("echo", listOf(SettingRow.CALL_ECHO_SUPPRESSION)),
             SettingsGroup("advanced", listOf(SettingRow.SOUND_ADVANCED)),
         )
         SettingsCategory.CAR -> listOfNotNull(
             SettingsGroup("cluster", listOf(SettingRow.CLUSTER_DIRECTIONS))
+                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
+            // Tried and working in the car (2026-11-08 to 2026-11-14), so no longer experimental.
+            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE))
+                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
+            SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART))
+                .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
+            SettingsGroup("carplay_wheel", listOf(SettingRow.CARPLAY_WHEEL, SettingRow.WHEEL_UP_DOWN, SettingRow.WHEEL_LEFT_RIGHT))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
             SettingsGroup("location", listOf(SettingRow.SEND_LOCATION)),
             SettingsGroup("parked", listOf(SettingRow.VIDEO_WHILE_PARKED)),
@@ -153,10 +169,8 @@ internal object SettingsLayout {
         // Features not yet tried in a car, each off by default and in the order they were added; only the
         // eh32 cluster (SWI68, SWI165) has them.
         SettingsCategory.EXPERIMENTAL -> listOf(
-            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE)),
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
-            SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART)),
-            SettingsGroup("carplay_wheel", listOf(SettingRow.CARPLAY_WHEEL)),
+            SettingsGroup("mfi", listOf(SettingRow.CAR_MFI_CHIP)),
         ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),
@@ -165,6 +179,13 @@ internal object SettingsLayout {
         SettingsCategory.HELP -> listOf(
             SettingsGroup("diagnostics", listOf(SettingRow.SAVE_REPORT, SettingRow.DOWNLOAD_REPORT, SettingRow.REPORT_LOCATION)),
             SettingsGroup("help", listOf(SettingRow.WIRELESS_HELP)),
+        )
+        // Test options and test tools: for car tests and diagnosis, not for everyday use.
+        SettingsCategory.DEVELOPER -> listOf(
+            SettingsGroup("microphone", listOf(SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING)),
+            SettingsGroup("call_audio", listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST)),
+            SettingsGroup("siri", listOf(SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS)),
+            SettingsGroup("navigation_audio", listOf(SettingRow.NAV_DUCKING)),
         )
         SettingsCategory.ABOUT -> listOf(
             SettingsGroup("about", listOf(SettingRow.VERSION, SettingRow.CREDITS)),

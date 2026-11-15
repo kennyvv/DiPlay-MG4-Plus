@@ -124,4 +124,13 @@ class CarPlayWheelControlTest {
         assertEquals(127, CarPlayWheel.knob(Command.RIGHT).x)
         assertTrue(CarPlayWheel.knob(Command.SELECT).select)
     }
+
+    @Test fun flippedDirectionsReverseTheKnob() {
+        assertEquals(1, CarPlayWheel.knob(Command.UP, flipUpDown = true).wheel)
+        assertEquals(-1, CarPlayWheel.knob(Command.DOWN, flipUpDown = true).wheel)
+        assertEquals(-127, CarPlayWheel.knob(Command.LEFT, flipUpDown = true).x)
+        assertEquals(127, CarPlayWheel.knob(Command.LEFT, flipLeftRight = true).x)
+        assertEquals(-127, CarPlayWheel.knob(Command.RIGHT, flipLeftRight = true).x)
+        assertTrue(CarPlayWheel.knob(Command.SELECT, flipUpDown = true, flipLeftRight = true).select)
+    }
 }

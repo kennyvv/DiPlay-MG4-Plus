@@ -162,6 +162,8 @@ class CarPlayController(
     private val clusterDirections: Boolean = false,
     /** Answer the iPhone's Now Playing artwork transfers and report covers to [artworkListener]. */
     private val albumArt: Boolean = false,
+    /** MG4 test: authenticate with the car's own MFi chip; falls back to the bundled identity. */
+    private val useCarMfiChip: Boolean = false,
 ) : Closeable {
     @Volatile private var handsFreeReleased = false
 
@@ -481,6 +483,18 @@ class CarPlayController(
     }
 
     /** Sends one CarPlay media-button press (an [com.shilapi.xcertplay.airplay.AirPlayHid] media index). */
+    /** Siri prewarm on voice-button down (test switch). */
+    fun prewarmSiri(): Boolean {
+        if (closed) return false
+        val session = activeSession ?: return false
+        return try {
+            touchExecutor.execute { session.prewarmSiri() }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** Opens Siri on the iPhone, as the car's voice button does in CarPlay. */
     fun requestSiri(): Boolean {
         if (closed) return false
@@ -619,6 +633,47 @@ class CarPlayController(
         availabilityPollGeneration.incrementAndGet()
         phase = Phase.MFI
         onStatus(CarPlayStatus.DiscoveringMfi)
+        if (useCarMfiChip) {
+            openCarMfi()
+            return
+        }
+        startBundledMfi()
+    }
+
+    /**
+     * Tries the car's MFi chip first. Any failure before the phone has seen anything falls back to
+     * the bundled identity for this session, so the certificate and signatures never come from
+     * two sources.
+     */
+    private fun openCarMfi() {
+        executor.execute {
+            val earlier = com.shilapi.xcertplay.mfi.CarMfiState.failure
+            if (earlier != null) {
+                debugLog("Car MFi chip: skipped, failed earlier this run ($earlier); using the bundled identity")
+                if (!closed && phase == Phase.MFI) startBundledMfi()
+                return@execute
+            }
+            val authenticator = try {
+                com.shilapi.xcertplay.mfi.CarMfiAuthenticator.open(
+                    com.shilapi.xcertplay.mfi.CarMfiClient.local(),
+                ) { debugLog(it) }
+            } catch (error: Throwable) {
+                debugLog("Car MFi chip: not used, ${com.shilapi.xcertplay.mfi.CarMfiClient.describe(error)}; using the bundled identity")
+                null
+            }
+            if (closed || phase != Phase.MFI) return@execute
+            if (authenticator == null) {
+                startBundledMfi()
+                return@execute
+            }
+            mfiSession = MfiSession(authenticator, null)
+            debugLog("Car MFi chip: in use for this session (bundled identity not used)")
+            onStatus(CarPlayStatus.MfiReady)
+            startPhone()
+        }
+    }
+
+    private fun startBundledMfi() {
         val offlineDirectory = java.io.File(appContext.noBackupFilesDir, LocalMfiAuthenticationClient.DIRECTORY)
         if (offlineDirectory.exists()) {
             openLocalMfi(offlineDirectory)

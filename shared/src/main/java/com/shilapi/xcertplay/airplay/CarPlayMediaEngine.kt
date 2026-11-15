@@ -347,7 +347,13 @@ class CarPlayMediaEngine(
         if (isScreenStreamType(type)) sink.onScreenStreamActive(type, false)
     }
 
+    override fun onAudioDuck(session: AirPlaySession, ducked: Boolean) {
+        session.logDebug("airplay ${if (ducked) "duckAudio" else "unduckAudio"} (navigation prompt ${if (ducked) "starts" else "ends"})")
+        com.shilapi.xcertplay.media.NavigationDucking.onDuck(ducked)
+    }
+
     override fun onSessionClosed(session: AirPlaySession) {
+        com.shilapi.xcertplay.media.NavigationDucking.reset()
         clearPendingIapTunnel(session)
         videoSettingsChannels.remove(session)?.close()
         val sessionStreams = streams.keys.filter { it.session === session }

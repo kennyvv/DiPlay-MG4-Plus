@@ -12,7 +12,7 @@ DiPlay-MG4 Plus builds on two projects, and almost everything in it is their wor
   video, steering wheel, dashboard directions, location, charging, dark mode, the two-pane Settings
   and more). This repository continues from its `mg4.96` build.
 
-Current build: **0.2.9-mg4.96-swi68.11**. It installs as `com.shihab.diplay.hudtest`, the same
+Current build: **0.2.9-mg4.96-swi68.12**. It installs as `com.shihab.diplay.hudtest`, the same
 package as andrew-snape's builds, so it installs over them; it can sit alongside an upstream
 `com.shihab.diplay` install. Run one at a time.
 
@@ -31,20 +31,43 @@ interface check is in [docs/MG4_SWI68.md](docs/MG4_SWI68.md).
 Also always on: in Bluetooth Music mode, a phone that is still on hands-free is no longer sent to
 Bluetooth settings (iOS drops A2DP to the car during wireless CarPlay on purpose).
 
-### Settings > Experimental
+### Settings > Car (dashboard and steering wheel)
 
-Each one is off by default, on SWI68 and SWI165 only. The cluster ones use the 260 px square in
-the middle of the instrument cluster, which the head unit draws on Android display 1.
+Tried and working in the car, so no longer experimental. On SWI68 and SWI165 only, each off by default. The
+cluster ones use the 260 px square in the middle of the instrument cluster, which the head unit draws on
+Android display 1.
 
 | Feature | What it does | Car test |
 |---|---|---|
 | **Map on the dashboard** | CarPlay's own instrument-cluster screen (Map or Next turn) in the cluster square on the Navigation page. **Map element size** (Large, Medium, Small) asks for a larger stream and scales it into the square, so Apple Maps draws smaller | Works (2026-11-08). Overlay renderer, Medium size by default |
-| **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
 | **Song on the dashboard** | The CarPlay song (title, artist, album) on the cluster's Music page. The car's own song card only takes CarPlay from the stock AllGo apps, so Plus draws its own | Works (2026-11-08) |
 | **Album art on the song card** | The cover, from the iPhone's iAP2 artwork transfers | Works (2026-11-08) |
-| **Steering-wheel joystick for CarPlay** | Hold the centre of the right-hand joystick while CarPlay is on screen: up and down step CarPlay's highlight, left and right nudge, the centre selects. Hold again, or leave CarPlay, to get volume and tracks back. Works through an accessibility service, like MG4Control's advanced shortcuts | Works (2026-11-08) |
+| **Steering-wheel joystick for CarPlay** | Hold the centre of the right-hand joystick while CarPlay is on screen: up and down step CarPlay's highlight, left and right nudge, the centre selects. Hold again, or leave CarPlay, to get volume and tracks back. Works through an accessibility service, like MG4Control's advanced shortcuts. **Joystick up and down** and **Joystick left and right** (Normal or Flipped) set the direction; up and down are flipped by default | Works (2026-11-14) |
+
+### Settings > Experimental
+
+Off by default, on SWI68 and SWI165 only.
+
+| Feature | What it does | Car test |
+|---|---|---|
+| **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
+| **Use car's MFi chip (test)** | Authenticates with the car's own Apple MFi chip instead of the identity built into the app (from andrew-snape's 0.4.0). If the chip can't be used, the connection uses the built-in identity and the report says why | Not yet tried |
 
 See [CHANGELOG.md](CHANGELOG.md) (the `swi68` entries) for the details of each.
+
+### Settings > Developer
+
+Test options and test tools, MG4 only, each off by default. Tried in the emulator, not yet in the car.
+
+| Option | What it does | Car test |
+|---|---|---|
+| **Car echo canceller for calls (test)** | Plays calls on the car's own phone output and records its phone microphone, so the head unit's echo canceller works, as with the car's own CarPlay | Not yet tried |
+| **Test call echo** | Plays a test sound through both call paths and reports how loudly it comes back; no call needed | Not yet tried |
+| **Car microphone processing for Siri (test)** | Siri records through the car's own Siri noise reduction | Not yet tried (works in the emulator) |
+| **Siri own audio focus (test)** | The car sees Siri as a voice assistant, not music | Not yet tried (works in the emulator) |
+| **Siri prewarm on voice button (test)** | The voice button gets Siri ready as soon as it goes down | Not yet tried |
+| **Navigation prompts lower music (test)** | Music dips under navigation prompts and the volume knob sets prompt volume | Not yet tried (music dips in the emulator) |
+| Microphone (test), Siri microphone as PCM (test), Record microphone (test) | Moved here from Sound | |
 
 ## Inherited from andrew-snape/DiPlay-MG4
 

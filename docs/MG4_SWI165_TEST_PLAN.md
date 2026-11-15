@@ -122,6 +122,27 @@ Not yet tried in the car. It applies from the first build with the two-pane Sett
 | H5 | Read Settings in daylight and at night | Text and rows are readable in both | n/a |
 | H6 | Save the report | The **Settings changes (newest last)** section lists the changes from H3 and H4 | `--- Settings changes (newest last) ---` |
 
+## J. Developer tests (DiPlay-MG4 Plus)
+
+Settings > Developer. Turn on only the switch for the step, then reconnect CarPlay. Tried in the emulator, not yet in the car.
+
+| # | Step | Pass | Log lines |
+|---|---|---|---|
+| J1 | Parked, cabin quiet, CarPlay closed or idle: **Test call echo** | Two result lines. With a working canceller the car path's `echo=` is much lower than the normal path's (aim: 20 dB less) | `Call echo test: path=normal ...`, `path=car ...`, `car path echo ... less echo` |
+| J2 | **Car echo canceller for calls** on. Call your voicemail, speak for 10 s, then play back the message. If you can, call a person and talk over each other | You are clear on the voicemail; the other person doesn't hear themselves | `Audio: ready audioType=telephony route=car phone output`, `Microphone telephony: started source=car phone input`. Silent call or `gave no audio`: turn it off and note it |
+| J3 | **Car microphone processing for Siri** on. Hold the voice button and dictate a long sentence, with music playing and the fan up | Siri writes it correctly | `Microphone speechrecognition: started source=car Siri input` |
+| J4 | **Siri own audio focus** on. Ask Siri a question while music plays | Music drops or pauses while Siri talks, and comes back | `Audio: Siri focus requested ... granted=1`, `Audio: Siri focus released` |
+| J5 | **Siri prewarm** on. Short press, then hold, the voice button | Siri opens at least as fast as before | `Wheel raw key: code=287 down=true -> Siri prewarm sent=true` |
+| J6 | **Navigation prompts lower music** on, the car's lower-media-for-navigation setting on. Start an Apple Maps route with music playing; turn the volume knob during a prompt | Music dips under each prompt and comes back; the knob changes the next prompt's volume, not music | `Nav duck: on focus=1 source52=true setNaviDucking=ok`, `Nav duck: off (released)` |
+
+## K. Car MFi chip and joystick direction (DiPlay-MG4 Plus)
+
+| # | Step | Pass | Log lines |
+|---|---|---|---|
+| K1 | Any drive: download the report | The report says whether the car's MFi chip answered | `Car MFi chip:` header line; `probe result ...` in the session log |
+| K2 | Only if K1 shows the chip working: Settings > Experimental > **Use car's MFi chip (test)** on, reconnect CarPlay | CarPlay connects as before; Siri and a call work | `Car MFi chip: in use for this session`. If it can't be used: `not used, ...; using the bundled identity`. Turn it off if CarPlay won't connect |
+| K3 | Steering-wheel joystick on, CarPlay control on (hold centre). Push up, then down, on a list | Up moves the highlight up. If not, flip **Joystick up and down** and try again | `Wheel:` lines |
+
 ## Known risks to check in code before release
 
 | # | Risk | Why | What to check |

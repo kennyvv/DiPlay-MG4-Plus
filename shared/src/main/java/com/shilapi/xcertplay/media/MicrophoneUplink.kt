@@ -51,6 +51,8 @@ internal class MicrophoneUplink(
     private val running = AtomicBoolean(false)
     private val firstPacketLogged = AtomicBoolean(false)
     @Volatile private var recorder: AudioRecord? = null
+    /** Calls on the head unit's own phone microphone path (test switch, MG4 only). */
+    @Volatile private var stockInput: StockCallAudio.Input? = null
     @Volatile private var echoCanceler: AcousticEchoCanceler? = null
     // Software echo suppression for calls, used when the head unit has no echo canceller.
     private var echoSuppressor: EchoSuppressor? = null
@@ -93,6 +95,33 @@ internal class MicrophoneUplink(
             return false
         }
         val bufferSize = maxOf(minBuffer * 2, config.frameBytes * 4)
+        val carRateOk = config.sampleRate == StockCallAudio.INPUT_RATE || config.sampleRate == 2 * StockCallAudio.INPUT_RATE
+        if (config.audioType == "telephony" && config.channels == 1 && StockCallAudio.enabled && carRateOk) {
+            val opened = StockCallAudio.Input.open(StockCallAudio.INPUT_RATE)
+            val input = opened.getOrNull()
+            if (input != null) {
+                sourceUsed = "car phone input (MIC, flag 0x200, ${StockCallAudio.INPUT_RATE} Hz)" +
+                    (nextEncoder?.let { " opus=${it.kind}" } ?: "") + " swEcho=off"
+                return startCapture(carPhoneReader(input, channelMask, bufferSize, MediaRecorder.AudioSource.MIC), nextEncoder, stockInputHolder = input)
+            }
+            runCatching { report("Microphone telephony: car phone input failed (${opened.exceptionOrNull()?.message}); using the normal microphone") }
+        }
+        if (config.audioType == "speechrecognition" && config.channels == 1 && StockCallAudio.siriEnabled && carRateOk &&
+            MicrophoneSource.override == null
+        ) {
+            val opened = StockCallAudio.Input.openSiri(StockCallAudio.INPUT_RATE)
+            val input = opened.getOrNull()
+            if (input != null) {
+                sourceUsed = "car Siri input (VOICE_RECOGNITION, flag 0x100, ${StockCallAudio.INPUT_RATE} Hz)" +
+                    (nextEncoder?.let { " opus=${it.kind}" } ?: "")
+                return startCapture(
+                    carPhoneReader(input, channelMask, bufferSize, MediaRecorder.AudioSource.VOICE_RECOGNITION),
+                    nextEncoder,
+                    stockInputHolder = input,
+                )
+            }
+            runCatching { report("Microphone speechrecognition: car Siri input failed (${opened.exceptionOrNull()?.message}); using the normal microphone") }
+        }
         // Head units can refuse the call-processing source outside their own hands-free call
         // (seen as silent calls with Wi-Fi audio on an MG4); fall back to the plain microphone.
         val nextRecorder = createRecorder(source, channelMask, bufferSize)?.also { sourceUsed = sourceName(source) }
@@ -112,6 +141,19 @@ internal class MicrophoneUplink(
             return false
         }
 
+        return startCapture(
+            { data, offset, length -> nextRecorder.read(data, offset, length, AudioRecord.READ_BLOCKING) },
+            nextEncoder,
+            recorderHolder = nextRecorder,
+        )
+    }
+
+    private fun startCapture(
+        read: (ByteArray, Int, Int) -> Int,
+        nextEncoder: OpusEncoder?,
+        recorderHolder: AudioRecord? = null,
+        stockInputHolder: StockCallAudio.Input? = null,
+    ): Boolean {
         val nextSocket = try {
             DatagramSocket(null).apply {
                 reuseAddress = true
@@ -119,18 +161,20 @@ internal class MicrophoneUplink(
             }
         } catch (error: Exception) {
             Log.e(TAG, "microphone socket creation failed", error)
-            nextRecorder.release()
+            recorderHolder?.release()
+            stockInputHolder?.close()
             nextEncoder?.close()
             running.set(false)
             return false
         }
 
-        recorder = nextRecorder
+        recorder = recorderHolder
+        stockInput = stockInputHolder
         socket = nextSocket
         opusEncoder = nextEncoder
         return try {
-            nextRecorder.startRecording()
-            thread = Thread({ capture(nextRecorder, nextSocket) }, "carplay-mic").apply {
+            recorderHolder?.startRecording()
+            thread = Thread({ capture(read, nextSocket) }, "carplay-mic").apply {
                 isDaemon = true
                 start()
             }
@@ -165,6 +209,49 @@ internal class MicrophoneUplink(
         } catch (error: Exception) {
             Log.w(TAG, "echo canceller not attached", error)
             "failed"
+        }
+    }
+
+    /**
+     * Reads the car's phone microphone (24 kHz) and doubles it to the call's 48 kHz. If the HAL never
+     * starts that capture, switches to the plain microphone so the caller still hears the driver.
+     */
+    private fun carPhoneReader(
+        input: StockCallAudio.Input,
+        channelMask: Int,
+        bufferSize: Int,
+        fallbackSource: Int,
+    ): (ByteArray, Int, Int) -> Int {
+        val upsampler = if (config.sampleRate == StockCallAudio.INPUT_RATE) null else DoubleRateUpsampler()
+        var low = ByteArray(0)
+        var fallback: AudioRecord? = null
+        return read@{ data, offset, length ->
+            fallback?.let { return@read it.read(data, offset, length, AudioRecord.READ_BLOCKING) }
+            val want = if (upsampler == null) length else (length / 4) * 2
+            if (low.size < want) low = ByteArray(want)
+            val n = input.read(low, 0, want)
+            if (n < 0 && input.starved && running.get()) {
+                val next = createRecorder(fallbackSource, channelMask, bufferSize)
+                runCatching {
+                    report("Microphone ${config.audioType}: car input gave no audio; switched to the normal microphone (${if (next != null) sourceName(fallbackSource) else "none"})")
+                }
+                if (next == null) return@read -1
+                next.startRecording()
+                recorder = next
+                fallback = next
+                sourceUsed = "$sourceUsed, fell back to ${sourceName(fallbackSource)}"
+                return@read next.read(data, offset, length, AudioRecord.READ_BLOCKING)
+            }
+            if (n <= 0) return@read n
+            if (upsampler == null) {
+                low.copyInto(data, offset, 0, n)
+                n
+            } else {
+                val doubled = ByteArray(n * 2)
+                val bytes = upsampler.process(low, 0, n, doubled)
+                doubled.copyInto(data, offset, 0, bytes)
+                bytes
+            }
         }
     }
 
@@ -204,19 +291,19 @@ internal class MicrophoneUplink(
         else -> source.toString()
     }
 
-    private fun capture(recorder: AudioRecord, socket: DatagramSocket) {
+    private fun capture(read: (ByteArray, Int, Int) -> Int, socket: DatagramSocket) {
         val frame = ByteArray(config.frameBytes)
         val readBuffer = ByteArray(maxOf(frame.size, MIN_READ_BYTES))
         val counters = MicrophoneCounters()
         var filled = 0
         recording = MicrophoneRecording.open(config.audioType, config.sampleRate, config.channels)
-        if (config.audioType == "telephony" && config.channels == 1 && CallEchoSuppression.enabled) {
+        if (config.audioType == "telephony" && config.channels == 1 && CallEchoSuppression.enabled && stockInput == null) {
             echoSuppressor = EchoSuppressor(EchoReference.shared, config.sampleRate)
         }
         try {
             while (running.get()) {
                 val readStarted = System.nanoTime()
-                val count = recorder.read(readBuffer, 0, readBuffer.size, AudioRecord.READ_BLOCKING)
+                val count = read(readBuffer, 0, readBuffer.size)
                 readMaxNs = maxOf(readMaxNs, System.nanoTime() - readStarted)
                 if (count < 0) {
                     if (running.get()) Log.e(TAG, "microphone read failed code=$count")
@@ -349,6 +436,7 @@ internal class MicrophoneUplink(
         } catch (_: Exception) {
             // Best effort; release below is authoritative.
         }
+        stockInput?.stop()
         try {
             socket?.close()
         } catch (_: Exception) {
@@ -375,6 +463,9 @@ internal class MicrophoneUplink(
         } catch (_: Exception) {
             // Best effort.
         }
+        val currentStockInput = stockInput
+        stockInput = null
+        currentStockInput?.close()
         val currentEcho = echoCanceler
         echoCanceler = null
         runCatching { currentEcho?.release() }

@@ -35,6 +35,36 @@ import com.shilapi.xcertplay.settings.SettingsUi.Companion as Colors
  * [SettingsLayout] decides which rows appear; this class reads and saves their values.
  */
 internal class Mg4SettingsPage(private val activity: Activity, private val host: Host) {
+    /**
+     * Plays a test signal through the call output and records the call microphone, on the normal call
+     * path and then the car's own phone path, without a phone call. Results go to the report.
+     */
+    private fun runCallEchoTest(row: android.widget.TextView, title: String) {
+        if (!row.isEnabled) return
+        row.isEnabled = false
+        row.text = activity.getString(R.string.call_echo_test_running)
+        val app = activity.applicationContext
+        Thread({
+            val lines = mutableListOf<String>()
+            com.shilapi.xcertplay.media.CallEchoSelfTest.runBoth(app, com.shilapi.xcertplay.MicRecordings.directory(app)) { line ->
+                lines += line
+                android.util.Log.i("DiPlay-EchoTest", line)
+                com.shilapi.xcertplay.settings.SettingsChangeLog.note(app, line)
+            }
+            activity.runOnUiThread {
+                row.isEnabled = true
+                row.text = title
+                if (!activity.isFinishing) {
+                    android.app.AlertDialog.Builder(activity)
+                        .setTitle(title)
+                        .setMessage(lines.joinToString("\n\n"))
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+                }
+            }
+        }, "call-echo-test").apply { isDaemon = true }.start()
+    }
+
     /** What the page needs from [com.shilapi.xcertplay.DiPlayActivity]: dialogs, system screens, reconnecting. */
     interface Host {
         val sessionRunning: Boolean
@@ -216,6 +246,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingsCategory.EXPERIMENTAL -> R.string.settings_category_experimental
         SettingsCategory.GENERAL -> R.string.settings_category_general
         SettingsCategory.HELP -> R.string.settings_category_help
+        SettingsCategory.DEVELOPER -> R.string.settings_category_developer
         SettingsCategory.ABOUT -> R.string.about
     })
 
@@ -228,6 +259,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingsCategory.EXPERIMENTAL -> R.drawable.ic_dp_diagnostics
         SettingsCategory.GENERAL -> R.drawable.ic_dp_general
         SettingsCategory.HELP -> R.drawable.ic_dp_diagnostics
+        SettingsCategory.DEVELOPER -> R.drawable.ic_dp_automation
         SettingsCategory.ABOUT -> R.drawable.ic_dp_about
     }
 
@@ -241,6 +273,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingsCategory.EXPERIMENTAL -> 0xFFBF5AF2.toInt()
         SettingsCategory.GENERAL -> 0xFF8E8E93.toInt()
         SettingsCategory.HELP -> 0xFF40C8E0.toInt()
+        SettingsCategory.DEVELOPER -> 0xFF636366.toInt()
         SettingsCategory.ABOUT -> 0xFF8E8E93.toInt()
     }
 
@@ -307,6 +340,9 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         "screen" -> R.string.settings_header_screen
         "picture" -> R.string.settings_header_picture
         "cluster" -> R.string.settings_header_driving
+        "cluster_map" -> R.string.settings_header_dashboard
+        "carplay_wheel" -> R.string.settings_header_wheel
+        "mfi" -> R.string.settings_header_mfi
         "location" -> R.string.settings_header_driving.takeIf { env.generation != Mg4FirmwareProfile.Generation.SWI165 }
         "appearance" -> R.string.settings_header_appearance
         "battery" -> R.string.settings_header_battery
@@ -346,12 +382,17 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
             "calls" -> add(R.string.calls_over_carplay_only_description)
             "buffer" -> add(R.string.settings_footer_buffer)
             "microphone" -> add(R.string.settings_footer_microphone)
+            "echo" -> add(R.string.settings_footer_echo)
+            "call_audio" -> add(R.string.settings_footer_call_audio)
+            "siri" -> add(R.string.settings_footer_siri)
+            "navigation_audio" -> add(R.string.settings_footer_navigation_audio)
             "navigation" -> add(R.string.contrib_audio_home_nav_channel_note)
             "cluster" -> add(R.string.mg4_cluster_directions_description)
             "cluster_map" -> add(R.string.mg4_cluster_map_description)
             "cluster_lanes" -> add(R.string.mg4_cluster_lanes_description)
             "cluster_song" -> add(R.string.mg4_cluster_song_description)
             "carplay_wheel" -> add(R.string.mg4_carplay_wheel_description)
+            "mfi" -> add(R.string.settings_footer_car_mfi)
             "location" -> add(R.string.sends_precise_android_location_as_carplay_gps_data_when_th)
             "parked" -> add(R.string.settings_footer_video_while_parked)
             "appearance" -> add(R.string.mg4_sunset_dark_mode_description)
@@ -400,6 +441,12 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.MICROPHONE -> R.string.microphone_source
         SettingRow.SIRI_MIC_PCM -> R.string.siri_microphone_pcm
         SettingRow.CALL_ECHO_SUPPRESSION -> R.string.call_echo_suppression
+        SettingRow.CAR_CALL_PATH -> R.string.car_call_path
+        SettingRow.CALL_ECHO_TEST -> R.string.call_echo_test
+        SettingRow.SIRI_CAR_MIC -> R.string.siri_car_mic
+        SettingRow.SIRI_PREWARM -> R.string.siri_prewarm
+        SettingRow.SIRI_OWN_FOCUS -> R.string.siri_own_focus
+        SettingRow.NAV_DUCKING -> R.string.nav_ducking
         SettingRow.MIC_RECORDING -> R.string.microphone_recording
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
         SettingRow.CLUSTER_DIRECTIONS -> R.string.mg4_cluster_directions
@@ -409,6 +456,9 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.CLUSTER_SONG -> R.string.mg4_cluster_song
         SettingRow.CLUSTER_ALBUM_ART -> R.string.mg4_cluster_album_art
         SettingRow.CARPLAY_WHEEL -> R.string.mg4_carplay_wheel
+        SettingRow.WHEEL_UP_DOWN -> R.string.wheel_up_down
+        SettingRow.WHEEL_LEFT_RIGHT -> R.string.wheel_left_right
+        SettingRow.CAR_MFI_CHIP -> R.string.use_car_mfi_chip
         SettingRow.SEND_LOCATION -> R.string.settings_send_location
         SettingRow.VIDEO_WHILE_PARKED -> R.string.mg4_video_while_parked
         SettingRow.SUNSET_DARK_MODE -> R.string.mg4_sunset_dark_mode
@@ -498,6 +548,21 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                 SettingRow.CALL_ECHO_SUPPRESSION -> switch(AirPlayPersistence.loadCallEchoSuppression(activity)) {
                     AirPlayPersistence.saveCallEchoSuppression(activity, it)
                 }
+                SettingRow.CAR_CALL_PATH -> switch(AirPlayPersistence.loadCarCallPath(activity)) {
+                    AirPlayPersistence.saveCarCallPath(activity, it)
+                }
+                SettingRow.SIRI_CAR_MIC -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_SIRI_CAR_MIC)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_SIRI_CAR_MIC, it)
+                }
+                SettingRow.SIRI_PREWARM -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_SIRI_PREWARM)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_SIRI_PREWARM, it)
+                }
+                SettingRow.SIRI_OWN_FOCUS -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_SIRI_OWN_FOCUS)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_SIRI_OWN_FOCUS, it)
+                }
+                SettingRow.NAV_DUCKING -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_NAV_DUCKING)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_NAV_DUCKING, it)
+                }
                 SettingRow.MIC_RECORDING -> switch(AirPlayPersistence.loadMicrophoneRecording(activity)) {
                     AirPlayPersistence.saveMicrophoneRecording(activity, it)
                     com.shilapi.xcertplay.MicRecordings.sync(activity.applicationContext)
@@ -533,6 +598,19 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                     AirPlayPersistence.saveCarPlayWheel(activity, it)
                     com.shilapi.xcertplay.CarPlayWheel.setServiceEnabled(activity, it)
                 }
+                SettingRow.WHEEL_UP_DOWN -> segmented(
+                    listOf(R.string.wheel_direction_normal, R.string.wheel_direction_flipped).map(activity::getString),
+                    if (AirPlayPersistence.loadWheelFlipUpDown(activity)) 1 else 0,
+                ) { AirPlayPersistence.saveWheelFlipUpDown(activity, it == 1) }
+                SettingRow.WHEEL_LEFT_RIGHT -> segmented(
+                    listOf(R.string.wheel_direction_normal, R.string.wheel_direction_flipped).map(activity::getString),
+                    if (AirPlayPersistence.loadWheelFlipLeftRight(activity)) 1 else 0,
+                ) { AirPlayPersistence.saveWheelFlipLeftRight(activity, it == 1) }
+                SettingRow.CAR_MFI_CHIP -> switch(AirPlayPersistence.loadUseCarMfiChip(activity)) {
+                    // A fresh choice gets a fresh try, even if the chip failed earlier this run.
+                    com.shilapi.xcertplay.mfi.CarMfiState.reset()
+                    AirPlayPersistence.saveUseCarMfiChip(activity, it)
+                }
                 SettingRow.CLUSTER_MAP -> {
                     val choices = listOf(null) + CarPlayClusterDisplay.Content.entries
                     segmented(
@@ -566,6 +644,7 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                 SettingRow.SOFTWARE_UPDATE -> link(host.version()) { host.checkForUpdates() }
                 SettingRow.APP_PERMISSIONS -> link(null) { host.openAppPermissions() }
                 SettingRow.BLUETOOTH -> link(null) { host.openBluetoothSettings() }
+                SettingRow.CALL_ECHO_TEST -> ui.actionRow(title) {}.also { row -> row.setOnClickListener { runCallEchoTest(row, title) } }
                 SettingRow.SAVE_REPORT -> ui.actionRow(title) { host.saveReport() }.also { saveReportRow = it }
                 SettingRow.DOWNLOAD_REPORT -> ui.actionRow(title) { host.downloadReport() }.also { downloadReportRow = it }
                 SettingRow.REPORT_LOCATION -> ui.actionRow(title) { host.chooseReportLocation() }

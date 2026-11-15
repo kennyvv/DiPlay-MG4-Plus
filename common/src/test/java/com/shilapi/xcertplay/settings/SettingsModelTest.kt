@@ -21,23 +21,28 @@ class SettingsModelTest {
         assertFalse(SettingRow.CLUSTER_DIRECTIONS in rows(SettingsCategory.CAR, env(Generation.SWI69)))
     }
 
-    @Test fun dashboardMapSongAndArtAreExperimentalOnTheEh32Cluster() {
-        val experimental = rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165))
-        val added = listOf(
-            SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE, SettingRow.CLUSTER_LANES, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART,
-            SettingRow.CARPLAY_WHEEL,
+    @Test fun provenDashboardFeaturesAndTheJoystickLiveUnderCar() {
+        val car = rows(SettingsCategory.CAR, env(Generation.SWI165))
+        val moved = listOf(
+            SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE, SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART,
+            SettingRow.CARPLAY_WHEEL, SettingRow.WHEEL_UP_DOWN, SettingRow.WHEEL_LEFT_RIGHT,
         )
-        // In the order they were added.
-        assertEquals(added, experimental)
-        // The wheel switch is read on every key press; the others need a reconnect.
-        assertFalse(SettingRow.CARPLAY_WHEEL.appliesOnReconnect)
-        for (row in added) {
-            assertTrue(row.name, row in experimental)
-            if (row != SettingRow.CARPLAY_WHEEL) assertTrue(row.name, row.appliesOnReconnect)
-            SettingsCategory.entries.filter { it != SettingsCategory.EXPERIMENTAL }.forEach {
-                assertFalse(row.name, row in rows(it, env(Generation.SWI165)))
-            }
+        for (row in moved) {
+            assertTrue(row.name, row in car)
+            assertFalse(row.name, row in rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165)))
+            assertFalse(row.name, row in rows(SettingsCategory.CAR, env(Generation.SWI69)))
         }
+        // The wheel settings are read on every key press; the dashboard ones need a reconnect.
+        assertFalse(SettingRow.CARPLAY_WHEEL.appliesOnReconnect)
+        assertFalse(SettingRow.WHEEL_UP_DOWN.appliesOnReconnect)
+        assertTrue(SettingRow.CLUSTER_MAP.appliesOnReconnect)
+    }
+
+    @Test fun experimentalHoldsLanesAndTheCarMfiChip() {
+        assertEquals(
+            listOf(SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP),
+            rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165)),
+        )
         assertTrue(rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI69)).isEmpty())
     }
 
@@ -104,5 +109,21 @@ class SettingsModelTest {
         assertEquals(SettingsChangeLog.MAX_LINES, lines.size)
         assertEquals("line 5", lines.first())
         assertEquals("line ${SettingsChangeLog.MAX_LINES + 4}", lines.last())
+    }
+
+    @Test fun testOptionsLiveOnlyUnderDeveloper() {
+        val tests = listOf(
+            SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING,
+            SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST,
+            SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS, SettingRow.NAV_DUCKING,
+        )
+        val developer = rows(SettingsCategory.DEVELOPER, env())
+        for (row in tests) {
+            assertTrue(row.name, row in developer)
+            SettingsCategory.entries.filter { it != SettingsCategory.DEVELOPER }.forEach {
+                assertFalse(row.name, row in rows(it, env()))
+            }
+        }
+        assertTrue(SettingRow.CALL_ECHO_SUPPRESSION in rows(SettingsCategory.SOUND, env()))
     }
 }
