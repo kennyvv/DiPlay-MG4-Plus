@@ -62,6 +62,8 @@ internal enum class SettingRow(val kind: RowKind, val appliesOnReconnect: Boolea
     SIRI_CAR_MIC(RowKind.SWITCH, true),
     SIRI_PREWARM(RowKind.SWITCH, true),
     SIRI_OWN_FOCUS(RowKind.SWITCH, true),
+    CALL_OWN_FOCUS(RowKind.SWITCH, true),
+    RINGTONE_STOCK(RowKind.SWITCH, true),
     NAV_DUCKING(RowKind.SWITCH, true),
     MIC_RECORDING(RowKind.SWITCH),
     SOUND_ADVANCED(RowKind.PAGE),
@@ -190,7 +192,7 @@ internal object SettingsLayout {
         // Test options and test tools: for car tests and diagnosis, not for everyday use.
         SettingsCategory.DEVELOPER -> listOf(
             SettingsGroup("microphone", listOf(SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING)),
-            SettingsGroup("call_audio", listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST)),
+            SettingsGroup("call_audio", listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST, SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK)),
             SettingsGroup("siri", listOf(SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS)),
             SettingsGroup("navigation_audio", listOf(SettingRow.NAV_DUCKING)),
         )

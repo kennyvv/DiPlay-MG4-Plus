@@ -66,6 +66,8 @@ Test options and test tools, MG4 only, each off by default. Tried in the emulato
 | Option | What it does | Car test |
 |---|---|---|
 | **Car echo canceller for calls (test)** | Plays calls on the car's own phone output and records its phone microphone, so the head unit's echo canceller works, as with the car's own CarPlay | Not yet tried |
+| **Calls get their own audio focus (test)** | A call holds the car's audio focus for the whole call, ahead of music, as stock | Not yet tried |
+| **Ringtone on the car's ring output (test)** | The iPhone's ring plays as a ringtone at ring volume, not with navigation | Not yet tried |
 | **Test call echo** | Plays a test sound through both call paths and reports how loudly it comes back; no call needed | Not yet tried |
 | **Car microphone processing for Siri (test)** | Siri records through the car's own Siri noise reduction | Not yet tried (works in the emulator) |
 | **Siri own audio focus (test)** | The car sees Siri as a voice assistant, not music | Not yet tried (works in the emulator) |

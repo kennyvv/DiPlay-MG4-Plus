@@ -448,6 +448,8 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
         SettingRow.SIRI_CAR_MIC -> R.string.siri_car_mic
         SettingRow.SIRI_PREWARM -> R.string.siri_prewarm
         SettingRow.SIRI_OWN_FOCUS -> R.string.siri_own_focus
+        SettingRow.CALL_OWN_FOCUS -> R.string.call_own_focus
+        SettingRow.RINGTONE_STOCK -> R.string.ringtone_like_stock
         SettingRow.NAV_DUCKING -> R.string.nav_ducking
         SettingRow.MIC_RECORDING -> R.string.microphone_recording
         SettingRow.NAVIGATION_CHANNEL -> R.string.contrib_audio_home_nav_channel_label
@@ -562,6 +564,12 @@ internal class Mg4SettingsPage(private val activity: Activity, private val host:
                 }
                 SettingRow.SIRI_PREWARM -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_SIRI_PREWARM)) {
                     AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_SIRI_PREWARM, it)
+                }
+                SettingRow.CALL_OWN_FOCUS -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_CALL_OWN_FOCUS)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_CALL_OWN_FOCUS, it)
+                }
+                SettingRow.RINGTONE_STOCK -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_RINGTONE_STOCK)) {
+                    AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_RINGTONE_STOCK, it)
                 }
                 SettingRow.SIRI_OWN_FOCUS -> switch(AirPlayPersistence.loadTestSwitch(activity, AirPlayPersistence.KEY_SIRI_OWN_FOCUS)) {
                     AirPlayPersistence.saveTestSwitch(activity, AirPlayPersistence.KEY_SIRI_OWN_FOCUS, it)

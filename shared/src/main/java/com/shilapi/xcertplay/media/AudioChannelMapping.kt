@@ -12,6 +12,8 @@ internal enum class AudioChannel {
     PHONE,
     ASSISTANT,
     NAVIGATION,
+    /** The iPhone's ringtone ("alert") with **Ringtone like stock (test)**: ring usage, as the car's own CarPlay. */
+    RING,
 }
 
 internal enum class AudioContentType {
@@ -62,7 +64,8 @@ internal object AudioChannelMapper {
         "speechrecognition" ->
             AudioChannelSelection(AudioChannel.ASSISTANT, AudioContentType.SPEECH)
         "media" -> AudioChannelSelection(AudioChannel.MEDIA, AudioContentType.MUSIC)
-        "default", "alert", "compatibility" ->
+        "alert" -> alertSelection(navigationStreamType)
+        "default", "compatibility" ->
             AudioChannelSelection(AudioChannel.NAVIGATION, AudioContentType.SPEECH, navigationStreamType)
         else -> mainHighAudioOrNavigation(payloadType, navigationStreamType)
     }
@@ -77,9 +80,18 @@ internal object AudioChannelMapper {
             AudioChannelSelection(AudioChannel.ASSISTANT, AudioContentType.SPEECH)
         "media", "compatibility" ->
             AudioChannelSelection(AudioChannel.MEDIA, AudioContentType.MUSIC)
-        "default", "alert" -> AudioChannelSelection(AudioChannel.NAVIGATION, AudioContentType.SPEECH, navigationStreamType)
+        "alert" -> alertSelection(navigationStreamType)
+        "default" -> AudioChannelSelection(AudioChannel.NAVIGATION, AudioContentType.SPEECH, navigationStreamType)
         else -> mainHighAudioOrNavigation(payloadType, navigationStreamType)
     }
+
+    /** The iPhone's ringtone: on the ring output with the test switch, else with navigation as before. */
+    private fun alertSelection(navigationStreamType: Int): AudioChannelSelection =
+        if (AudioFocusOptions.ringtoneLikeStock) {
+            AudioChannelSelection(AudioChannel.RING, AudioContentType.SPEECH)
+        } else {
+            AudioChannelSelection(AudioChannel.NAVIGATION, AudioContentType.SPEECH, navigationStreamType)
+        }
 
     private fun mainHighAudioOrNavigation(payloadType: Int, navigationStreamType: Int): AudioChannelSelection =
         if (payloadType == STREAM_TYPE_MAIN_HIGH_AUDIO) {

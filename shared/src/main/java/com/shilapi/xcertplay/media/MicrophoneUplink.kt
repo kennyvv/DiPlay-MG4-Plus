@@ -96,11 +96,13 @@ internal class MicrophoneUplink(
         }
         val bufferSize = maxOf(minBuffer * 2, config.frameBytes * 4)
         val carRateOk = config.sampleRate == StockCallAudio.INPUT_RATE || config.sampleRate == 2 * StockCallAudio.INPUT_RATE
-        if (config.audioType == "telephony" && config.channels == 1 && StockCallAudio.enabled && carRateOk) {
-            val opened = StockCallAudio.Input.open(StockCallAudio.INPUT_RATE)
+        val callCarRate = StockCallAudio.carRate(config.sampleRate)
+        if (config.audioType == "telephony" && config.channels == 1 && StockCallAudio.enabled && callCarRate != null) {
+            val opened = StockCallAudio.Input.open(callCarRate)
             val input = opened.getOrNull()
             if (input != null) {
-                sourceUsed = "car phone input (MIC, flag 0x200, ${StockCallAudio.INPUT_RATE} Hz)" +
+                carInputRate = callCarRate
+                sourceUsed = "car phone input (MIC, flag 0x200, $callCarRate Hz)" +
                     (nextEncoder?.let { " opus=${it.kind}" } ?: "") + " swEcho=off"
                 return startCapture(carPhoneReader(input, channelMask, bufferSize, MediaRecorder.AudioSource.MIC), nextEncoder, stockInputHolder = input)
             }
@@ -216,13 +218,16 @@ internal class MicrophoneUplink(
      * Reads the car's phone microphone (24 kHz) and doubles it to the call's 48 kHz. If the HAL never
      * starts that capture, switches to the plain microphone so the caller still hears the driver.
      */
+    /** The rate the car's microphone was opened at for this stream (24 kHz for Siri and 48 kHz calls). */
+    private var carInputRate = StockCallAudio.INPUT_RATE
+
     private fun carPhoneReader(
         input: StockCallAudio.Input,
         channelMask: Int,
         bufferSize: Int,
         fallbackSource: Int,
     ): (ByteArray, Int, Int) -> Int {
-        val upsampler = if (config.sampleRate == StockCallAudio.INPUT_RATE) null else DoubleRateUpsampler()
+        val upsampler = if (config.sampleRate == carInputRate) null else DoubleRateUpsampler()
         var low = ByteArray(0)
         var fallback: AudioRecord? = null
         return read@{ data, offset, length ->

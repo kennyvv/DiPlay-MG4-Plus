@@ -134,6 +134,8 @@ Settings > Developer. Turn on only the switch for the step, then reconnect CarPl
 | J4 | **Siri own audio focus** on. Ask Siri a question while music plays | Music drops or pauses while Siri talks, and comes back | `Audio: Siri focus requested ... granted=1`, `Audio: Siri focus released` |
 | J5 | **Siri prewarm** on. Short press, then hold, the voice button | Siri opens at least as fast as before | `Wheel raw key: code=287 down=true -> Siri prewarm sent=true` |
 | J6 | **Navigation prompts lower music** on, the car's lower-media-for-navigation setting on. Start an Apple Maps route with music playing; turn the volume knob during a prompt | Music dips under each prompt and comes back; the knob changes the next prompt's volume, not music | `Nav duck: on focus=1 source52=true setNaviDucking=ok`, `Nav duck: off (released)` |
+| J8 | **Calls get their own audio focus** on, reconnect. Play music, make a call, hang up | Music stops for the call and comes back after | `Audio: focus requested channel=CALL gain=2` at the call, `channel=MEDIA gain=1` after |
+| J9 | **Ringtone on the car's ring output** on, reconnect. Have someone call the iPhone; change the car's volume while it rings | The ring is heard at ring volume (the knob changes it), not navigation volume | `Audio: ready audioType=alert ...`, `Audio: mode set=1`, `focus requested channel=RING` |
 
 ## K. Car MFi chip and joystick direction (DiPlay-MG4 Plus)
 

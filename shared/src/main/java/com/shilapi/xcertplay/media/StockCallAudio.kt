@@ -35,6 +35,16 @@ object StockCallAudio {
     /** The "carplay_phone Mic" takes 8, 16 or 24 kHz; at 48 kHz the HAL never starts its capture. */
     const val INPUT_RATE = 24_000
 
+    /**
+     * The rate the car's phone output and microphone run at for a call negotiated at [callRate]: the call's own rate
+     * at 8, 16 or 24 kHz (as stock), 24 kHz for a 48 kHz call (halved and doubled on the way), else null (not usable).
+     */
+    fun carRate(callRate: Int): Int? = when (callRate) {
+        8_000, 16_000, 24_000 -> callRate
+        48_000 -> 24_000
+        else -> null
+    }
+
     private const val TAG = "DiPlay-StockCall"
 
     private val loaded: Boolean by lazy {
@@ -56,7 +66,7 @@ object StockCallAudio {
     /** The call downlink, played on the head unit's direct phone output. */
     class Output private constructor(private var handle: Long, val ioHandle: Int) {
         /**
-         * Write of 16-bit mono PCM at [OUTPUT_RATE]. Returns bytes written (non-blocking: what fitted, 0 when full)
+         * Write of 16-bit mono PCM at the rate the output was opened at. Returns bytes written (non-blocking: what fitted, 0 when full)
          * or a negative status.
          */
         fun write(data: ByteArray, offset: Int, length: Int, blocking: Boolean = true): Int {
@@ -74,16 +84,16 @@ object StockCallAudio {
 
         companion object {
             /** Opens the output, or returns the failure for the log. */
-            fun open(): Result<Output> {
+            fun open(rate: Int = OUTPUT_RATE): Result<Output> {
                 if (!active) return Result.failure(IllegalStateException(status()))
-                return openForTest()
+                return openForTest(rate)
             }
 
             /** Opens whether or not the switch is on (call echo self-test). */
-            fun openForTest(): Result<Output> {
+            fun openForTest(rate: Int = OUTPUT_RATE): Result<Output> {
                 if (status() != "ok") return Result.failure(IllegalStateException(status()))
                 val device = nativeSetPhoneDevice(true)
-                val handle = nativeOpenOutput(OUTPUT_RATE)
+                val handle = nativeOpenOutput(rate)
                 if (handle <= 0) {
                     runCatching { nativeSetPhoneDevice(false) }
                     return Result.failure(IllegalStateException("AudioTrack status=$handle device=$device"))

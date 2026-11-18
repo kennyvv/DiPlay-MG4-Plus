@@ -206,12 +206,14 @@
     <string name="call_echo_test">Test call echo</string>
     <string name="siri_car_mic">Car microphone processing for Siri (test)</string>
     <string name="siri_prewarm">Siri prewarm on voice button (test)</string>
+    <string name="call_own_focus">Calls get their own audio focus (test)</string>
+    <string name="ringtone_like_stock">Ringtone on the car’s ring output (test)</string>
     <string name="siri_own_focus">Siri own audio focus (test)</string>
     <string name="nav_ducking">Navigation prompts lower music (test)</string>
     <string name="settings_footer_siri">Car microphone processing records Siri through the car’s own noise reduction, as the car’s CarPlay does; if it gives no audio, Siri uses the normal microphone. Prewarm tells the iPhone to get Siri ready as soon as the voice button goes down. Own audio focus lets the car see Siri as a voice assistant instead of music. Apply after CarPlay reconnects.</string>
     <string name="settings_footer_navigation_audio">While the iPhone speaks a navigation prompt, asks the car for navigation audio and to lower music, as the car’s CarPlay does, so the volume knob changes prompt volume. Needs the car’s own setting that lowers media for navigation. Applies after CarPlay reconnects.</string>
     <string name="settings_footer_echo">Turns the microphone down while the caller’s voice comes back from the speakers, so they don’t hear themselves. Used when the car’s echo canceller isn’t.</string>
-    <string name="settings_footer_call_audio">Car echo canceller plays calls on the car’s own phone output and records the car’s phone microphone, as the car’s own CarPlay does, so the head unit cancels echo; if it fails, calls use the normal path. Test call echo plays a test sound through both paths for about 20 seconds and shows how loudly it came back (no call needed; best parked, cabin quiet). Results and recordings go into Download to iPhone.</string>
+    <string name="settings_footer_call_audio">Car echo canceller plays calls on the car’s own phone output and records the car’s phone microphone, as the car’s own CarPlay does, so the head unit cancels echo; if it fails, calls use the normal path. Test call echo plays a test sound through both paths for about 20 seconds and shows how loudly it came back (no call needed; best parked, cabin quiet). Results and recordings go into Download to iPhone. Own audio focus gives a call the car’s focus for the whole call, ahead of music, and asks again after 200 ms if refused. Ringtone plays the iPhone’s ring with the ring sound type on the car’s ring output, not with navigation. Both apply after reconnect.</string>
     <string name="call_echo_test_running">Testing call echo, about 20 seconds…</string>
     <string name="microphone_recording">Record microphone (test)</string>
     <string name="settings_footer_microphone">For comparing how well Siri and callers hear you. PCM sends Siri plain audio instead of Opus; if CarPlay loses sound, turn it off. Record microphone keeps the first 10 seconds of each Siri request and call on the car and adds them to Download to iPhone. Turning it off deletes them.</string>

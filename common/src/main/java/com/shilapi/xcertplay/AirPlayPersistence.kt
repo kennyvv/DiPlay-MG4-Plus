@@ -393,6 +393,8 @@ object AirPlayPersistence {
     const val KEY_SIRI_PREWARM = "siri_prewarm"
     const val KEY_SIRI_OWN_FOCUS = "siri_own_focus"
     const val KEY_NAV_DUCKING = "nav_ducking"
+    const val KEY_CALL_OWN_FOCUS = "call_own_focus"
+    const val KEY_RINGTONE_STOCK = "ringtone_like_stock"
 
     fun loadTestSwitch(context: Context, key: String): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, false)

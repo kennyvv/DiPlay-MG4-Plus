@@ -126,4 +126,27 @@ class AudioChannelMappingTest {
             AudioChannelMapper.map(audioType, payloadType, mode),
         )
     }
+
+    @Test
+    fun alertGoesToTheRingOutputOnlyWithTheTestSwitch() {
+        try {
+            assertEquals(AudioChannel.NAVIGATION, AudioChannelMapper.map("alert", 100, AudioChannelMappingMode.MOBILE_COMPATIBLE).channel)
+            AudioFocusOptions.ringtoneLikeStock = true
+            assertEquals(AudioChannel.RING, AudioChannelMapper.map("alert", 100, AudioChannelMappingMode.MOBILE_COMPATIBLE).channel)
+            assertEquals(AudioChannel.RING, AudioChannelMapper.map("alert", 100, AudioChannelMappingMode.AUTOMOTIVE_BUS).channel)
+            // Navigation prompts ("default") stay where they were.
+            assertEquals(AudioChannel.NAVIGATION, AudioChannelMapper.map("default", 101, AudioChannelMappingMode.MOBILE_COMPATIBLE).channel)
+        } finally {
+            AudioFocusOptions.ringtoneLikeStock = false
+        }
+    }
+
+    @Test
+    fun carCallPathRunsAtTheCallsOwnRate() {
+        assertEquals(8_000, StockCallAudio.carRate(8_000))
+        assertEquals(16_000, StockCallAudio.carRate(16_000))
+        assertEquals(24_000, StockCallAudio.carRate(24_000))
+        assertEquals(24_000, StockCallAudio.carRate(48_000))
+        assertEquals(null, StockCallAudio.carRate(44_100))
+    }
 }

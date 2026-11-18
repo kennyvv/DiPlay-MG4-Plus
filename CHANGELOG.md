@@ -2,6 +2,14 @@
 
 mg4.96-swi68.12 (test build for SWI68 and SWI165), everything below. Not yet tried in the car: test plan sections J and K.
 
+Calls closer to the car's own CarPlay (2026-11-18; Settings > Developer, MG4 only, each off by default, apply after reconnect; see [docs/MG4_STOCK_CARPLAY_CALLS.md](docs/MG4_STOCK_CARPLAY_CALLS.md); test plan J8, J9). Tried in the emulator with an iPhone: an outgoing and an incoming call worked, the ring played on the ring output, and the car's volume showed phone volume during the call:
+
+- **Not added: calls as PCM like stock.** Tried in the emulator: offering the call only PCM 16/24 kHz made the iPhone set up no audio at all (as mg4.67), and with Opus kept for the microphone it still chose Opus 48 kHz for the call and the ring. Stock offers no Opus anywhere, which DiPlay can't copy without losing wireless audio, so there is no switch.
+- **Call focus in the log.** DiPlay's log redactor drops every line containing "PHONE ", so call focus lines never reached the report; they now name the channel `CALL` (`Audio: focus requested channel=CALL gain=2`). The request itself always went out (usage 2, tag 53, `GAIN_TRANSIENT`).
+- **Calls get their own audio focus (test).** A call holds the car's audio focus for the whole call, ranked ahead of music (before, an open music stream kept the shared request a music request during a call), asks again after 200 ms if refused, and music gets it back afterwards. Log: `Audio: focus requested channel=CALL gain=2`, `phone focus asked again after 200 ms`.
+- **Ringtone on the car's ring output (test).** The iPhone's ring (`alert`) plays with ring usage and `MODE_RINGTONE`, as stock, instead of on the navigation channel at navigation volume. Log: `Audio: mode set=1`, `focus requested channel=RING`.
+- **Car call path at the call's own rate.** With Car echo canceller for calls, 8, 16 and 24 kHz calls open the car's phone output and microphone at that rate, as stock; 48 kHz calls are halved to 24 kHz as before.
+
 Settings changes from car tests (2026-11-14):
 
 - **Out of Experimental.** Map on the dashboard (with Map element size), Song on the dashboard, Album art on the song card and the Steering-wheel joystick for CarPlay work in the car, so they move to Settings > Car (Dashboard and Steering wheel). Saved choices are kept.

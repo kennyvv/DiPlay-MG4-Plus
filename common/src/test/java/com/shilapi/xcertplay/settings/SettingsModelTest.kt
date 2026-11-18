@@ -121,6 +121,7 @@ class SettingsModelTest {
         val tests = listOf(
             SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING,
             SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST,
+            SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK,
             SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS, SettingRow.NAV_DUCKING,
         )
         val developer = rows(SettingsCategory.DEVELOPER, env())

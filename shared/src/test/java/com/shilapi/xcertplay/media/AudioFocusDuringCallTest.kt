@@ -66,4 +66,32 @@ class AudioFocusDuringCallTest {
         loseFocus(AudioManager.AUDIOFOCUS_LOSS)
         assertEquals(listOf(AudioManager.AUDIOFOCUS_LOSS to true), seen)
     }
+
+    @Test
+    fun withOwnFocusACallTakesTheRequestFromMusicAndMusicGetsItBack() {
+        val manager = RuntimeEnvironment.getApplication().getSystemService(AudioManager::class.java)!!
+        try {
+            AudioFocusOptions.callOwnFocus = true
+            val (focus, _) = coordinator()
+            focus.acquire(Any(), AudioChannel.MEDIA, music)
+            val callTrack = Any()
+            focus.acquire(callTrack, AudioChannel.PHONE, call)
+            val during = shadowOf(manager).lastAudioFocusRequest
+            assertEquals(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, during.durationHint)
+            assertEquals(AudioAttributes.USAGE_VOICE_COMMUNICATION, during.audioFocusRequest.audioAttributes.usage)
+            focus.release(callTrack)
+            assertEquals(AudioAttributes.USAGE_MEDIA, shadowOf(manager).lastAudioFocusRequest.audioFocusRequest.audioAttributes.usage)
+        } finally {
+            AudioFocusOptions.callOwnFocus = false
+        }
+    }
+
+    @Test
+    fun withoutOwnFocusMusicKeepsTheRequestDuringACall() {
+        val manager = RuntimeEnvironment.getApplication().getSystemService(AudioManager::class.java)!!
+        val (focus, _) = coordinator()
+        focus.acquire(Any(), AudioChannel.MEDIA, music)
+        focus.acquire(Any(), AudioChannel.PHONE, call)
+        assertEquals(AudioAttributes.USAGE_MEDIA, shadowOf(manager).lastAudioFocusRequest.audioFocusRequest.audioAttributes.usage)
+    }
 }

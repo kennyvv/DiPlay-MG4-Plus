@@ -3394,6 +3394,8 @@ class CarPlayHostActivity : ComponentActivity() {
                 com.shilapi.xcertplay.media.StockCallAudio.siriEnabled = test(AirPlayPersistence.KEY_SIRI_CAR_MIC)
                 CarPlayMediaKeys.siriPrewarm = test(AirPlayPersistence.KEY_SIRI_PREWARM)
                 com.shilapi.xcertplay.media.AudioFocusOptions.siriOwnFocus = test(AirPlayPersistence.KEY_SIRI_OWN_FOCUS)
+                com.shilapi.xcertplay.media.AudioFocusOptions.callOwnFocus = test(AirPlayPersistence.KEY_CALL_OWN_FOCUS)
+                com.shilapi.xcertplay.media.AudioFocusOptions.ringtoneLikeStock = test(AirPlayPersistence.KEY_RINGTONE_STOCK)
                 com.shilapi.xcertplay.media.NavigationDucking.enabled = test(AirPlayPersistence.KEY_NAV_DUCKING)
                 com.shilapi.xcertplay.media.NavigationDucking.prepare(this) { line -> appendLog(line) }
                 appendLog(
@@ -3401,6 +3403,8 @@ class CarPlayHostActivity : ComponentActivity() {
                         "siriCarMic=${com.shilapi.xcertplay.media.StockCallAudio.siriEnabled} " +
                         "siriPrewarm=${CarPlayMediaKeys.siriPrewarm} " +
                         "siriOwnFocus=${com.shilapi.xcertplay.media.AudioFocusOptions.siriOwnFocus} " +
+                        "callOwnFocus=${com.shilapi.xcertplay.media.AudioFocusOptions.callOwnFocus} " +
+                        "ringtone=${com.shilapi.xcertplay.media.AudioFocusOptions.ringtoneLikeStock} " +
                         "navDucking=${com.shilapi.xcertplay.media.NavigationDucking.enabled} " +
                         "carMfiChip=${AirPlayPersistence.loadUseCarMfiChip(this)} " +
                         "modesScreen=${AirPlayPersistence.loadModesScreen(this)} " +
