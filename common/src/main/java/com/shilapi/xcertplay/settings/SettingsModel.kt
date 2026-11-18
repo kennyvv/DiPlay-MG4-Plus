@@ -146,15 +146,18 @@ internal object SettingsLayout {
         SettingsCategory.DISPLAY -> listOf(
             SettingsGroup("screen", listOf(SettingRow.CARPLAY_SIZE, SettingRow.RIGHT_HAND_DRIVE, SettingRow.FULL_SCREEN)),
             SettingsGroup("picture", listOf(SettingRow.RESOLUTION, SettingRow.FRAME_RATE, SettingRow.EFFICIENT_VIDEO)),
-            SettingsGroup("handover_screen", listOf(SettingRow.MODES_SCREEN)),
             SettingsGroup("advanced", listOf(SettingRow.DISPLAY_ADVANCED)),
         )
         SettingsCategory.SOUND -> listOf(
             SettingsGroup("wifi_audio", listOf(SettingRow.WIFI_AUDIO)),
-            SettingsGroup("handover_audio", listOf(SettingRow.MODES_AUDIO)),
+            SettingsGroup("handover_audio", listOf(SettingRow.MODES_AUDIO, SettingRow.RECHECK_CAR_SOURCE)),
             SettingsGroup("calls", listOf(SettingRow.CALLS_OVER_CARPLAY)),
-            SettingsGroup("buffer", listOf(SettingRow.MUSIC_BUFFER)),
+            // Car test 2026-11-18: these worked and are on by default.
+            SettingsGroup("call_audio_car", listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK)),
             SettingsGroup("echo", listOf(SettingRow.CALL_ECHO_SUPPRESSION)),
+            SettingsGroup("siri_audio", listOf(SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_OWN_FOCUS)),
+            SettingsGroup("navigation_audio", listOf(SettingRow.NAV_DUCKING)),
+            SettingsGroup("buffer", listOf(SettingRow.MUSIC_BUFFER)),
             SettingsGroup("advanced", listOf(SettingRow.SOUND_ADVANCED)),
         )
         SettingsCategory.CAR -> listOfNotNull(
@@ -180,7 +183,7 @@ internal object SettingsLayout {
         SettingsCategory.EXPERIMENTAL -> listOf(
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
             SettingsGroup("mfi", listOf(SettingRow.CAR_MFI_CHIP)),
-            SettingsGroup("carplay_modes", listOf(SettingRow.RECHECK_CAR_SOURCE)),
+            SettingsGroup("carplay_modes", listOf(SettingRow.MODES_SCREEN)),
         ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),
@@ -193,9 +196,8 @@ internal object SettingsLayout {
         // Test options and test tools: for car tests and diagnosis, not for everyday use.
         SettingsCategory.DEVELOPER -> listOf(
             SettingsGroup("microphone", listOf(SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING)),
-            SettingsGroup("call_audio", listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST, SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK)),
-            SettingsGroup("siri", listOf(SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS)),
-            SettingsGroup("navigation_audio", listOf(SettingRow.NAV_DUCKING)),
+            SettingsGroup("call_audio", listOf(SettingRow.CALL_ECHO_TEST)),
+            SettingsGroup("siri", listOf(SettingRow.SIRI_PREWARM)),
         )
         SettingsCategory.ABOUT -> listOf(
             SettingsGroup("about", listOf(SettingRow.VERSION, SettingRow.CREDITS)),

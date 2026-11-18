@@ -1,8 +1,20 @@
 # Unreleased (DiPlay-MG4 Plus)
 
+mg4.96-swi68.14 (test build for SWI68 and SWI165), after the car test of 2026-11-18:
+
+- **On by default, now in Settings > Sound:** Car echo canceller for calls, Calls get their own audio focus, Ringtone on the car's ring output, Car microphone processing for Siri, Siri own audio focus, Navigation prompts lower music, and Recheck the car's audio source (with Hand CarPlay audio to the car's sources). All worked in the car. A choice you saved earlier still wins. Echo suppression on calls (software) stays on for calls on the normal path; on the car path the car's own canceller does the work.
+- **Back to Experimental, off by default:** Tell iPhone when CarPlay is hidden. It worked, but once in the car the picture stayed black for a while when coming back from the home screen.
+- **Still in Developer:** Test call echo, Siri prewarm (not tried yet) and the microphone tools.
+
 mg4.96-swi68.13 (test build for SWI68 and SWI165): car test checklist in [docs/CAR_TEST_NEXT.md](docs/CAR_TEST_NEXT.md).
 
-- **Out of Experimental, on by default.** Tried and working (2026-11-18): **Tell iPhone when CarPlay is hidden** (now Settings > Display), **Hand CarPlay audio to the car's sources** (Settings > Sound, under Wi-Fi audio) and **Pause the dashboard map off its page** (Settings > Car, with the dashboard map). A choice you saved earlier still wins. **Recheck the car's audio source** stays in Experimental.
+Car test 2026-11-18 (31 checks: 26 passed, 1 failed, 4 skipped):
+
+- **Passed:** install over swi68.12; connect; music at connect with the recheck on; home screen and back; reverse camera; dashboard song card (gradient, progress) and map pause; MG4 Launcher song, buttons, iPhone battery and charging, song position; radio and CarPlay hand-over both ways and a short interruption; calls out and in, wheel phone key; ringtone on the ring output; calls' own focus; **Test call echo** (car path −27.5 dB against −14.3 dB on the normal path, 13.4 dB less echo); **Car echo canceller for calls** (the other person said the echo was gone); Siri understood, car Siri microphone, Siri's own focus; navigation prompts lower music; joystick direction; 15 minutes with no freeze; report download.
+- **Failed:** **Echo suppression on calls** (software, normal call path): the other person still heard an echo (D2j).
+- **Skipped:** Siri prewarm, cluster directions (D4), lane guidance on the dashboard.
+
+- **Out of Experimental, on by default.** Tried and working (2026-11-18): **Hand CarPlay audio to the car's sources** (Settings > Sound, under Wi-Fi audio) and **Pause the dashboard map off its page** (Settings > Car, with the dashboard map). A choice you saved earlier still wins.
 
 mg4.96-swi68.12 (test build for SWI68 and SWI165), everything below. Not yet tried in the car: test plan sections J and K.
 

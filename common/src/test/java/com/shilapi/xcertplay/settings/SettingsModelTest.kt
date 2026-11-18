@@ -39,8 +39,14 @@ class SettingsModelTest {
     }
 
     @Test fun handOverAndMapPauseLeftExperimental() {
-        assertTrue(SettingRow.MODES_SCREEN in rows(SettingsCategory.DISPLAY, env(Generation.SWI165)))
         assertTrue(SettingRow.MODES_AUDIO in rows(SettingsCategory.SOUND, env(Generation.SWI165)))
+        assertTrue(SettingRow.RECHECK_CAR_SOURCE in rows(SettingsCategory.SOUND, env(Generation.SWI165)))
+        // Car test 2026-11-18: the call and Siri switches that worked live in Sound.
+        for (row in listOf(SettingRow.CAR_CALL_PATH, SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK,
+            SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_OWN_FOCUS, SettingRow.NAV_DUCKING)) {
+            assertTrue(row.name, row in rows(SettingsCategory.SOUND, env()))
+            assertFalse(row.name, row in rows(SettingsCategory.DEVELOPER, env()))
+        }
         assertTrue(SettingRow.CLUSTER_MAP_PAUSE in rows(SettingsCategory.CAR, env(Generation.SWI165)))
     }
 
@@ -48,7 +54,7 @@ class SettingsModelTest {
         assertFalse(SettingRow.MODES_SCREEN.appliesOnReconnect)
         assertFalse(SettingRow.MODES_AUDIO.appliesOnReconnect)
         assertEquals(
-            listOf(SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP, SettingRow.RECHECK_CAR_SOURCE),
+            listOf(SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP, SettingRow.MODES_SCREEN),
             rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165)),
         )
         assertTrue(rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI69)).isEmpty())
@@ -122,9 +128,7 @@ class SettingsModelTest {
     @Test fun testOptionsLiveOnlyUnderDeveloper() {
         val tests = listOf(
             SettingRow.MICROPHONE, SettingRow.SIRI_MIC_PCM, SettingRow.MIC_RECORDING,
-            SettingRow.CAR_CALL_PATH, SettingRow.CALL_ECHO_TEST,
-            SettingRow.CALL_OWN_FOCUS, SettingRow.RINGTONE_STOCK,
-            SettingRow.SIRI_CAR_MIC, SettingRow.SIRI_PREWARM, SettingRow.SIRI_OWN_FOCUS, SettingRow.NAV_DUCKING,
+            SettingRow.CALL_ECHO_TEST, SettingRow.SIRI_PREWARM,
         )
         val developer = rows(SettingsCategory.DEVELOPER, env())
         for (row in tests) {

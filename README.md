@@ -12,7 +12,7 @@ DiPlay-MG4 Plus builds on two projects, and almost everything in it is their wor
   video, steering wheel, dashboard directions, location, charging, dark mode, the two-pane Settings
   and more). This repository continues from its `mg4.96` build.
 
-Current build: **0.2.9-mg4.96-swi68.13**. It installs as `com.shihab.diplay.hudtest`, the same
+Current build: **0.2.9-mg4.96-swi68.14**. It installs as `com.shihab.diplay.hudtest`, the same
 package as andrew-snape's builds, so it installs over them; it can sit alongside an upstream
 `com.shihab.diplay` install. Run one at a time.
 
@@ -44,15 +44,28 @@ Android display 1.
 | **Album art on the song card** | The cover, from the iPhone's iAP2 artwork transfers | Works (2026-11-08) |
 | **Steering-wheel joystick for CarPlay** | Hold the centre of the right-hand joystick while CarPlay is on screen: up and down step CarPlay's highlight, left and right nudge, the centre selects. Hold again, or leave CarPlay, to get volume and tracks back. Works through an accessibility service, like MG4Control's advanced shortcuts. **Joystick up and down** and **Joystick left and right** (Normal or Flipped) set the direction; up and down are flipped by default | Works (2026-11-14) |
 
-### Screen and audio hand-over (on by default)
+### Audio hand-over and dashboard map (on by default)
 
 Like the car's own CarPlay, MG4 only. Tried and working (2026-11-18).
 
 | Setting | What it does | Car test |
 |---|---|---|
-| **Tell iPhone when CarPlay is hidden** (Display) | When you leave CarPlay for the car's own screens, the iPhone is told the car has the screen and stops sending the picture; music keeps playing, and CarPlay is back at once when you return | Works (2026-11-18) |
+| **Recheck the car's audio source** (Sound) | If CarPlay music is silent at connect because the car keeps another source although CarPlay has the sound, DiPlay asks the car again after 2 s, as a pause and play does | Works (2026-11-18): music heard at connect |
 | **Hand CarPlay audio to the car's sources** (Sound) | Wi-Fi audio: when the radio or Bluetooth music takes over, the iPhone pauses; a short interruption only borrows the sound. Playing something in CarPlay switches the car back | Works (2026-11-18) |
 | **Pause the dashboard map off its page** (Car) | While the cluster is not on its Navigation page, the iPhone stops drawing the dashboard map; it draws again when you go back | Works (2026-11-18) |
+
+### Calls, Siri and navigation like the car's own CarPlay (on by default)
+
+MG4 only. Built as Developer test switches, tried and working in the car (2026-11-18), now on by default in Settings > Sound. A choice you saved earlier still wins.
+
+| Setting | What it does | Car test |
+|---|---|---|
+| **Car echo canceller for calls** (Sound) | Plays calls on the car's own phone output and records its phone microphone, so the head unit's echo canceller works, as with the car's own CarPlay | Works (2026-11-18): the other person no longer heard themselves |
+| **Calls get their own audio focus** (Sound) | A call holds the car's audio focus for the whole call, ahead of music, as stock | Works (2026-11-18) |
+| **Ringtone on the car's ring output** (Sound) | The iPhone's ring plays as a ringtone at ring volume, not with navigation | Works (2026-11-18) |
+| **Car microphone processing for Siri** (Sound) | Siri records through the car's own Siri noise reduction | Works (2026-11-18) |
+| **Siri own audio focus** (Sound) | The car sees Siri as a voice assistant, not music | Works (2026-11-18) |
+| **Navigation prompts lower music** (Sound) | Music dips under navigation prompts and the volume knob sets prompt volume | Works (2026-11-18) |
 
 ### Settings > Experimental
 
@@ -61,25 +74,19 @@ Off by default, on SWI68 and SWI165 only.
 | Feature | What it does | Car test |
 |---|---|---|
 | **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
-| **Recheck the car's audio source (test)** | If CarPlay music is silent at connect because the car keeps another source although CarPlay has the sound, DiPlay asks the car again after 2 s, as a pause and play does | Not yet tried |
+| **Tell iPhone when CarPlay is hidden (test)** | When you leave CarPlay for the car's own screens, the iPhone is told the car has the screen and stops sending the picture; music keeps playing, and CarPlay is back at once when you return | Works, but once the picture stayed black for a while on return (2026-11-18): off by default |
 | **Use car's MFi chip (test)** | Authenticates with the car's own Apple MFi chip instead of the identity built into the app (from andrew-snape's 0.4.0). If the chip can't be used, the connection uses the built-in identity and the report says why | Not yet tried |
 
 See [CHANGELOG.md](CHANGELOG.md) (the `swi68` entries) for the details of each.
 
 ### Settings > Developer
 
-Test options and test tools, MG4 only, each off by default. Tried in the emulator, not yet in the car.
+Test options and test tools, MG4 only, each off by default.
 
 | Option | What it does | Car test |
 |---|---|---|
-| **Car echo canceller for calls (test)** | Plays calls on the car's own phone output and records its phone microphone, so the head unit's echo canceller works, as with the car's own CarPlay | Not yet tried |
-| **Calls get their own audio focus (test)** | A call holds the car's audio focus for the whole call, ahead of music, as stock | Not yet tried |
-| **Ringtone on the car's ring output (test)** | The iPhone's ring plays as a ringtone at ring volume, not with navigation | Not yet tried |
-| **Test call echo** | Plays a test sound through both call paths and reports how loudly it comes back; no call needed | Not yet tried |
-| **Car microphone processing for Siri (test)** | Siri records through the car's own Siri noise reduction | Not yet tried (works in the emulator) |
-| **Siri own audio focus (test)** | The car sees Siri as a voice assistant, not music | Not yet tried (works in the emulator) |
+| **Test call echo** | Plays a test sound through both call paths and reports how loudly it comes back; no call needed | Works (2026-11-18): car path 13.4 dB less echo (−27.5 against −14.3 dB) |
 | **Siri prewarm on voice button (test)** | The voice button gets Siri ready as soon as it goes down | Not yet tried |
-| **Navigation prompts lower music (test)** | Music dips under navigation prompts and the volume knob sets prompt volume | Not yet tried (music dips in the emulator) |
 | Microphone (test), Siri microphone as PCM (test), Record microphone (test) | Moved here from Sound | |
 
 ## Inherited from andrew-snape/DiPlay-MG4

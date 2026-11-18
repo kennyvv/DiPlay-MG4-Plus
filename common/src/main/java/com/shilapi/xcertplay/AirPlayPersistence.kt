@@ -298,10 +298,10 @@ object AirPlayPersistence {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_USE_CAR_MFI, enabled).apply()
     }
 
-    /** MG4: tell the iPhone the car has the screen while CarPlay is hidden (changeModes). On by default since 2026-11-18 (works); a saved choice wins. */
+    /** Experimental (MG4): tell the iPhone the car has the screen while CarPlay is hidden (changeModes). Off by default: once the picture stayed black for a while on return (car test 2026-11-18). */
     fun loadModesScreen(context: Context): Boolean =
         Mg4FirmwareProfile.detect().isMg4 &&
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_SCREEN, true)
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_SCREEN, false)
 
     fun saveModesScreen(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MODES_SCREEN, enabled).apply()
@@ -321,10 +321,10 @@ object AirPlayPersistence {
         Mg4FirmwareProfile.detect().isMg4 &&
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_MAP_PAUSE, true)
 
-    /** Experimental (MG4): ask for focus again when the car plays another source while DiPlay holds focus. Off by default. */
+    /** MG4: ask for focus again when the car plays another source while DiPlay holds focus. On by default since the car test of 2026-11-18; a saved choice wins. */
     fun loadRecheckCarSource(context: Context): Boolean =
         Mg4FirmwareProfile.detect().isMg4 &&
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_RECHECK_CAR_SOURCE, false)
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_RECHECK_CAR_SOURCE, true)
 
     fun saveRecheckCarSource(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_RECHECK_CAR_SOURCE, enabled).apply()
@@ -396,8 +396,15 @@ object AirPlayPersistence {
     const val KEY_CALL_OWN_FOCUS = "call_own_focus"
     const val KEY_RINGTONE_STOCK = "ringtone_like_stock"
 
+    /**
+     * Switches that worked in the car test of 2026-11-18 are on by default (a saved choice wins); the rest stay off.
+     */
+    private val TESTS_ON_BY_DEFAULT = setOf(
+        KEY_SIRI_CAR_MIC, KEY_SIRI_OWN_FOCUS, KEY_NAV_DUCKING, KEY_CALL_OWN_FOCUS, KEY_RINGTONE_STOCK,
+    )
+
     fun loadTestSwitch(context: Context, key: String): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, false)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, key in TESTS_ON_BY_DEFAULT)
 
     fun saveTestSwitch(context: Context, key: String, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(key, enabled).apply()
@@ -405,7 +412,7 @@ object AirPlayPersistence {
 
     /** Test: calls on the head unit's own phone output and microphone, for its echo canceller. Off by default. */
     fun loadCarCallPath(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CAR_CALL_PATH, false)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CAR_CALL_PATH, true)
 
     fun saveCarCallPath(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_CAR_CALL_PATH, enabled).apply()
