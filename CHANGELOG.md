@@ -1,5 +1,9 @@
 # Unreleased (DiPlay-MG4 Plus)
 
+mg4.96-swi68.13 (test build for SWI68 and SWI165): car test checklist in [docs/CAR_TEST_NEXT.md](docs/CAR_TEST_NEXT.md).
+
+- **Out of Experimental, on by default.** Tried and working (2026-11-18): **Tell iPhone when CarPlay is hidden** (now Settings > Display), **Hand CarPlay audio to the car's sources** (Settings > Sound, under Wi-Fi audio) and **Pause the dashboard map off its page** (Settings > Car, with the dashboard map). A choice you saved earlier still wins. **Recheck the car's audio source** stays in Experimental.
+
 mg4.96-swi68.12 (test build for SWI68 and SWI165), everything below. Not yet tried in the car: test plan sections J and K.
 
 Calls closer to the car's own CarPlay (2026-11-18; Settings > Developer, MG4 only, each off by default, apply after reconnect; see [docs/MG4_STOCK_CARPLAY_CALLS.md](docs/MG4_STOCK_CARPLAY_CALLS.md); test plan J8, J9). Tried in the emulator with an iPhone: an outgoing and an incoming call worked, the ring played on the ring output, and the car's volume showed phone volume during the call:

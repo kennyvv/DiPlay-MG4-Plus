@@ -146,10 +146,12 @@ internal object SettingsLayout {
         SettingsCategory.DISPLAY -> listOf(
             SettingsGroup("screen", listOf(SettingRow.CARPLAY_SIZE, SettingRow.RIGHT_HAND_DRIVE, SettingRow.FULL_SCREEN)),
             SettingsGroup("picture", listOf(SettingRow.RESOLUTION, SettingRow.FRAME_RATE, SettingRow.EFFICIENT_VIDEO)),
+            SettingsGroup("handover_screen", listOf(SettingRow.MODES_SCREEN)),
             SettingsGroup("advanced", listOf(SettingRow.DISPLAY_ADVANCED)),
         )
         SettingsCategory.SOUND -> listOf(
             SettingsGroup("wifi_audio", listOf(SettingRow.WIFI_AUDIO)),
+            SettingsGroup("handover_audio", listOf(SettingRow.MODES_AUDIO)),
             SettingsGroup("calls", listOf(SettingRow.CALLS_OVER_CARPLAY)),
             SettingsGroup("buffer", listOf(SettingRow.MUSIC_BUFFER)),
             SettingsGroup("echo", listOf(SettingRow.CALL_ECHO_SUPPRESSION)),
@@ -159,7 +161,7 @@ internal object SettingsLayout {
             SettingsGroup("cluster", listOf(SettingRow.CLUSTER_DIRECTIONS))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
             // Tried and working in the car (2026-11-08 to 2026-11-14), so no longer experimental.
-            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE))
+            SettingsGroup("cluster_map", listOf(SettingRow.CLUSTER_MAP, SettingRow.CLUSTER_MAP_SIZE, SettingRow.CLUSTER_MAP_PAUSE))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
             SettingsGroup("cluster_song", listOf(SettingRow.CLUSTER_SONG, SettingRow.CLUSTER_ALBUM_ART))
                 .takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 },
@@ -178,8 +180,7 @@ internal object SettingsLayout {
         SettingsCategory.EXPERIMENTAL -> listOf(
             SettingsGroup("cluster_lanes", listOf(SettingRow.CLUSTER_LANES)),
             SettingsGroup("mfi", listOf(SettingRow.CAR_MFI_CHIP)),
-            SettingsGroup("carplay_modes", listOf(SettingRow.MODES_SCREEN, SettingRow.MODES_AUDIO, SettingRow.RECHECK_CAR_SOURCE)),
-            SettingsGroup("cluster_map_pause", listOf(SettingRow.CLUSTER_MAP_PAUSE)),
+            SettingsGroup("carplay_modes", listOf(SettingRow.RECHECK_CAR_SOURCE)),
         ).takeIf { env.generation == Mg4FirmwareProfile.Generation.SWI165 }.orEmpty()
         SettingsCategory.GENERAL -> listOf(
             SettingsGroup("general", listOf(SettingRow.LANGUAGE, SettingRow.SOFTWARE_UPDATE)),

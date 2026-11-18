@@ -298,28 +298,28 @@ object AirPlayPersistence {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_USE_CAR_MFI, enabled).apply()
     }
 
-    /** Experimental (MG4): tell the iPhone the car has the screen while CarPlay is hidden (changeModes). Off by default. */
+    /** MG4: tell the iPhone the car has the screen while CarPlay is hidden (changeModes). On by default since 2026-11-18 (works); a saved choice wins. */
     fun loadModesScreen(context: Context): Boolean =
         Mg4FirmwareProfile.detect().isMg4 &&
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_SCREEN, false)
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_SCREEN, true)
 
     fun saveModesScreen(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MODES_SCREEN, enabled).apply()
     }
 
-    /** Experimental (MG4, Wi-Fi audio): hand CarPlay's audio to the car's sources and back (changeModes). Off by default. */
+    /** MG4, Wi-Fi audio: hand CarPlay's audio to the car's sources and back (changeModes). On by default since 2026-11-18 (works); a saved choice wins. */
     fun loadModesAudio(context: Context): Boolean =
         Mg4FirmwareProfile.detect().isMg4 &&
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_AUDIO, false)
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_MODES_AUDIO, true)
 
     fun saveModesAudio(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_MODES_AUDIO, enabled).apply()
     }
 
-    /** Experimental (MG4): stop the iPhone drawing the dashboard map while the cluster is off its Navigation page. Off by default. */
+    /** MG4: stop the iPhone drawing the dashboard map while the cluster is off its Navigation page. On by default since 2026-11-18 (works); a saved choice wins. */
     fun loadClusterMapPause(context: Context): Boolean =
         Mg4FirmwareProfile.detect().isMg4 &&
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_MAP_PAUSE, false)
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_CLUSTER_MAP_PAUSE, true)
 
     /** Experimental (MG4): ask for focus again when the car plays another source while DiPlay holds focus. Off by default. */
     fun loadRecheckCarSource(context: Context): Boolean =

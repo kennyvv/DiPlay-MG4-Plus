@@ -12,7 +12,7 @@ DiPlay-MG4 Plus builds on two projects, and almost everything in it is their wor
   video, steering wheel, dashboard directions, location, charging, dark mode, the two-pane Settings
   and more). This repository continues from its `mg4.96` build.
 
-Current build: **0.2.9-mg4.96-swi68.12**. It installs as `com.shihab.diplay.hudtest`, the same
+Current build: **0.2.9-mg4.96-swi68.13**. It installs as `com.shihab.diplay.hudtest`, the same
 package as andrew-snape's builds, so it installs over them; it can sit alongside an upstream
 `com.shihab.diplay` install. Run one at a time.
 
@@ -44,6 +44,16 @@ Android display 1.
 | **Album art on the song card** | The cover, from the iPhone's iAP2 artwork transfers | Works (2026-11-08) |
 | **Steering-wheel joystick for CarPlay** | Hold the centre of the right-hand joystick while CarPlay is on screen: up and down step CarPlay's highlight, left and right nudge, the centre selects. Hold again, or leave CarPlay, to get volume and tracks back. Works through an accessibility service, like MG4Control's advanced shortcuts. **Joystick up and down** and **Joystick left and right** (Normal or Flipped) set the direction; up and down are flipped by default | Works (2026-11-14) |
 
+### Screen and audio hand-over (on by default)
+
+Like the car's own CarPlay, MG4 only. Tried and working (2026-11-18).
+
+| Setting | What it does | Car test |
+|---|---|---|
+| **Tell iPhone when CarPlay is hidden** (Display) | When you leave CarPlay for the car's own screens, the iPhone is told the car has the screen and stops sending the picture; music keeps playing, and CarPlay is back at once when you return | Works (2026-11-18) |
+| **Hand CarPlay audio to the car's sources** (Sound) | Wi-Fi audio: when the radio or Bluetooth music takes over, the iPhone pauses; a short interruption only borrows the sound. Playing something in CarPlay switches the car back | Works (2026-11-18) |
+| **Pause the dashboard map off its page** (Car) | While the cluster is not on its Navigation page, the iPhone stops drawing the dashboard map; it draws again when you go back | Works (2026-11-18) |
+
 ### Settings > Experimental
 
 Off by default, on SWI68 and SWI165 only.
@@ -51,10 +61,7 @@ Off by default, on SWI68 and SWI165 only.
 | Feature | What it does | Car test |
 |---|---|---|
 | **Lane guidance on the dashboard** | CarPlay's lane arrows on the cluster's navigation card: with the car's own lane icons, or drawn by MG4CPlay at every angle the iPhone sends. Needs Directions on the dashboard | Not yet tried |
-| **Tell iPhone when CarPlay is hidden (test)** | When you leave CarPlay for the car's own screens, the iPhone is told the car has the screen (CarPlay's own `changeModes`, as the car's built-in CarPlay does), and gets it back when you return | Not yet tried |
-| **Hand CarPlay audio to the car's sources (test)** | Wi-Fi audio: when the radio or Bluetooth music takes over, the iPhone is told the car has the sound and pauses; a short interruption only borrows it. Playing something in CarPlay again switches the car back | Not yet tried |
 | **Recheck the car's audio source (test)** | If CarPlay music is silent at connect because the car keeps another source although CarPlay has the sound, DiPlay asks the car again after 2 s, as a pause and play does | Not yet tried |
-| **Pause the dashboard map off its page (test)** | While the cluster is not on its Navigation page, the iPhone stops drawing the dashboard map (less work for the car, less battery on the iPhone); it draws again when you go back | Not yet tried |
 | **Use car's MFi chip (test)** | Authenticates with the car's own Apple MFi chip instead of the identity built into the app (from andrew-snape's 0.4.0). If the chip can't be used, the connection uses the built-in identity and the report says why | Not yet tried |
 
 See [CHANGELOG.md](CHANGELOG.md) (the `swi68` entries) for the details of each.

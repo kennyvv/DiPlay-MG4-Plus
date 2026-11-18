@@ -38,15 +38,17 @@ class SettingsModelTest {
         assertTrue(SettingRow.CLUSTER_MAP.appliesOnReconnect)
     }
 
+    @Test fun handOverAndMapPauseLeftExperimental() {
+        assertTrue(SettingRow.MODES_SCREEN in rows(SettingsCategory.DISPLAY, env(Generation.SWI165)))
+        assertTrue(SettingRow.MODES_AUDIO in rows(SettingsCategory.SOUND, env(Generation.SWI165)))
+        assertTrue(SettingRow.CLUSTER_MAP_PAUSE in rows(SettingsCategory.CAR, env(Generation.SWI165)))
+    }
+
     @Test fun experimentalHoldsLanesTheCarMfiChipAndCarPlayModes() {
         assertFalse(SettingRow.MODES_SCREEN.appliesOnReconnect)
         assertFalse(SettingRow.MODES_AUDIO.appliesOnReconnect)
         assertEquals(
-            listOf(
-                SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP, SettingRow.MODES_SCREEN, SettingRow.MODES_AUDIO,
-                SettingRow.RECHECK_CAR_SOURCE,
-                SettingRow.CLUSTER_MAP_PAUSE,
-            ),
+            listOf(SettingRow.CLUSTER_LANES, SettingRow.CAR_MFI_CHIP, SettingRow.RECHECK_CAR_SOURCE),
             rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI165)),
         )
         assertTrue(rows(SettingsCategory.EXPERIMENTAL, env(Generation.SWI69)).isEmpty())

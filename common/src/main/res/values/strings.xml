@@ -229,7 +229,7 @@
     <string name="mg4_cluster_map_size_large">Large</string>
     <string name="mg4_cluster_map_size_medium">Medium</string>
     <string name="mg4_cluster_map_size_small">Small</string>
-    <string name="mg4_cluster_map_description">Asks the iPhone for CarPlay’s instrument-cluster screen and shows it in the square in the middle of the cluster, on its Navigation page. Map shows Apple Maps with the next turn on it; Next turn shows only the turn card. The car’s own navigation card and anything else in that square (such as MG4Control’s module) is covered while it shows. Works in the car (2026-11-08). Applies next time CarPlay connects. Map element size asks the iPhone for a larger picture and shrinks it into the square, so the map, turn card and labels draw smaller (Medium by default).</string>
+    <string name="mg4_cluster_map_description">Asks the iPhone for CarPlay’s instrument-cluster screen and shows it in the square in the middle of the cluster, on its Navigation page. Map shows Apple Maps with the next turn on it; Next turn shows only the turn card. The car’s own navigation card and anything else in that square (such as MG4Control’s module) is covered while it shows. Works in the car (2026-11-08). Applies next time CarPlay connects. Map element size asks the iPhone for a larger picture and shrinks it into the square, so the map, turn card and labels draw smaller (Medium by default). Pause the dashboard map off its page stops the iPhone drawing it while the dashboard shows another page, and draws it again when you go back.</string>
     <string name="mg4_cluster_lanes">Lane guidance on the dashboard</string>
     <string name="mg4_cluster_lanes_car">Car icons</string>
     <string name="mg4_cluster_lanes_drawn">Drawn by MG4CPlay</string>
@@ -525,12 +525,13 @@
     <string name="wheel_left_right">Joystick left and right</string>
     <string name="wheel_direction_normal">Normal</string>
     <string name="wheel_direction_flipped">Flipped</string>
-    <string name="carplay_modes_screen">Tell iPhone when CarPlay is hidden (test)</string>
-    <string name="carplay_modes_audio">Hand CarPlay audio to the car’s sources (test)</string>
+    <string name="carplay_modes_screen">Tell iPhone when CarPlay is hidden</string>
+    <string name="carplay_modes_audio">Hand CarPlay audio to the car’s sources</string>
     <string name="recheck_car_source">Recheck the car’s audio source (test)</string>
-    <string name="cluster_map_pause">Pause the dashboard map off its page (test)</string>
-    <string name="settings_footer_cluster_map_pause">While the dashboard is not on its Navigation page, the iPhone is asked to stop drawing the dashboard map, and to draw it again when you go back. Saves work on the car and battery on the iPhone. Needs Map on the dashboard. Takes effect at the next page change.</string>
-    <string name="settings_footer_carplay_modes">CarPlay’s own way for the car and the iPhone to hand over the screen and the sound, as the car’s built-in CarPlay does. Hidden: when you leave CarPlay for the car’s screens, the iPhone is told the car has the screen, and gets it back when you return. Audio (Wi-Fi audio): when the radio or Bluetooth music takes over, the iPhone is told the car has the sound and pauses; a short interruption borrows it. When you play something in CarPlay again, the car switches back to CarPlay. Recheck: if CarPlay music is silent at connect because the car keeps playing another source although CarPlay has the sound, CarPlay asks the car again after 2 seconds, as pausing and playing does. All take effect straight away.</string>
+    <string name="cluster_map_pause">Pause the dashboard map off its page</string>
+        <string name="settings_footer_carplay_modes">Recheck: if CarPlay music is silent at connect because the car keeps playing another source although CarPlay has the sound, CarPlay asks the car again after 2 seconds, as pausing and playing does. Takes effect straight away.</string>
+    <string name="settings_footer_handover_screen">When you leave CarPlay for the car’s own screens, the iPhone is told the car has the screen and stops sending the picture; when you come back it shows CarPlay again. Music keeps playing. As the car’s own CarPlay does.</string>
+    <string name="settings_footer_handover_audio">Wi-Fi audio: when the radio or Bluetooth music takes over, the iPhone is told the car has the sound and pauses; a short interruption only borrows it. When you play something in CarPlay again, the car switches back to CarPlay. Calls and Siri are never handed over.</string>
     <string name="use_car_mfi_chip">Use car’s MFi chip (test)</string>
     <string name="settings_footer_car_mfi">Uses the car’s own Apple authentication chip to prove to the iPhone that this is a licensed accessory, instead of the identity built into the app. Applies after you reconnect. If the chip can’t be used, the app says so in the report and uses its own identity for that connection. If CarPlay won’t connect, turn it off. Off by default and not yet tried in the car.</string>
     <string name="settings_header_appearance">Appearance</string>
