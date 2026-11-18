@@ -69,9 +69,16 @@ internal class AudioFocusCoordinator(
                 AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> lost = true
             }
         }
-        val media = synchronized(this) { requestedChannel == AudioChannel.MEDIA }
+        // A loss during a call or Siri is not a music loss: CarPlay calls are part of the iPhone's main audio, so
+        // treating it as one would hand the call's audio to the car (changeModes) and silence the call.
+        val media = synchronized(this) { requestedChannel == AudioChannel.MEDIA && !voiceActive() }
         runCatching { focusChangeListener?.invoke(change, media) }
     }
+
+    /** A CarPlay call or Siri track is playing. */
+    @Synchronized
+    fun voiceActive(): Boolean =
+        callTracks.isNotEmpty() || active.values.any { it.channel == AudioChannel.PHONE || it.channel == AudioChannel.ASSISTANT }
 
     /** Another source has the car's audio since the last loss (no gain since). */
     @Synchronized
@@ -84,6 +91,12 @@ internal class AudioFocusCoordinator(
     @Synchronized
     fun reacquire(): Boolean {
         if (!enabled || manager == null || active.isEmpty()) return false
+        // Never during a call or Siri: their own tracks already asked for focus, and a new music request would
+        // switch the car back to music.
+        if (voiceActive()) {
+            runCatching { report("Audio: focus not asked again, a call or Siri is active") }
+            return false
+        }
         request?.let { manager.abandonAudioFocusRequest(it) }
         request = null
         requestedChannel = null
@@ -258,6 +271,9 @@ class AndroidMediaSink(
 
     /** True while another car source has the audio since CarPlay last lost focus. */
     fun audioFocusLost(): Boolean = audioFocusCoordinator.hasLostFocus()
+
+    /** True while a CarPlay call or Siri track plays. */
+    fun voiceAudioActive(): Boolean = audioFocusCoordinator.voiceActive()
 
     private val screenStateLock = Any()
     private val activeScreenTypes = mutableSetOf<Int>()
@@ -853,6 +869,8 @@ private class AudioRenderer(
     private var track: AudioTrack? = null
     /** Calls on the head unit's own phone output, with its echo canceller (test switch, MG4 only). */
     private var stockCallOutput: StockCallAudio.Output? = null
+    /** The car phone output stalled during this call; the rest of the call uses the normal track. */
+    @Volatile private var stockCallStalled = false
     private var stockCallDownsampler: HalfRateDownsampler? = null
     private var stockCallPcm = ByteArray(0)
     private var pcm = ByteArray(64 * 1024)
@@ -1033,7 +1051,7 @@ private class AudioRenderer(
     }
 
     private fun createTrack() {
-        if (openStockCallOutput()) return
+        if (!stockCallStalled && openStockCallOutput()) return
         val encoding = AndroidAudioFormat.ENCODING_PCM_16BIT
         val channelMask = if (format.channels >= 2) AndroidAudioFormat.CHANNEL_OUT_STEREO
         else AndroidAudioFormat.CHANNEL_OUT_MONO
@@ -1235,7 +1253,36 @@ private class AudioRenderer(
         if (stockCallPcm.size < length / 2 + 2) stockCallPcm = ByteArray(length / 2 + 2)
         val bytes = downsampler.process(data, offset, length, stockCallPcm)
         val started = System.nanoTime()
-        val count = output.write(stockCallPcm, 0, bytes)
+        // Non-blocking, so a stalled car phone output is noticed: on 2026-11-18 the head unit's direct phone output
+        // took ~14 packets, then its HAL write jammed while the Nuance canceller started, a blocking write never
+        // returned and the call was static, then silence.
+        var count = 0
+        var lastProgressNs = started
+        while (count < bytes) {
+            // A full track answers WOULD_BLOCK (-11) in non-blocking mode; that is "no room yet", not an error.
+            val n = output.write(stockCallPcm, count, bytes - count, blocking = false).let { if (it == WOULD_BLOCK) 0 else it }
+            if (n < 0) {
+                count = n
+                break
+            }
+            val now = System.nanoTime()
+            if (n > 0) {
+                count += n
+                lastProgressNs = now
+                continue
+            }
+            if (now - lastProgressNs > STOCK_CALL_STALL_NS) {
+                fallBackFromStockCall(output, "no audio taken for ${(now - lastProgressNs) / 1_000_000L} ms")
+                writePcm(data, offset, length)
+                return
+            }
+            try {
+                Thread.sleep(STOCK_CALL_RETRY_MS)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            }
+        }
         maxWriteMs = maxOf(maxWriteMs, (System.nanoTime() - started) / 1_000_000L)
         if (count < 0) {
             writeErrorsThisWindow++
@@ -1252,6 +1299,22 @@ private class AudioRenderer(
         writtenFramesThisWindow += frames
         bufferProgress.written(length)
         lastPcmWriteNs = System.nanoTime()
+    }
+
+    /**
+     * The car phone output stopped taking audio: close it and play the rest of the call on the normal call track,
+     * which is what the switch falls back to when the output cannot open.
+     */
+    private fun fallBackFromStockCall(output: StockCallAudio.Output, reason: String) {
+        stockCallStalled = true
+        audioFocusCoordinator.release(output)
+        stockCallOutput = null
+        stockCallDownsampler = null
+        runCatching { output.close() }
+        playbackStarted = false
+        report("Audio: car call path stalled ($reason); the call continues on the normal call track")
+        createTrack()
+        requestAudioFocus()
     }
 
     private fun pcmFormat(encoding: Int, channelMask: Int) = AndroidAudioFormat.Builder()
@@ -1672,6 +1735,9 @@ private class AudioRenderer(
     }
 
     private companion object {
+        const val STOCK_CALL_STALL_NS = 500_000_000L
+        const val STOCK_CALL_RETRY_MS = 5L
+        const val WOULD_BLOCK = -11
         const val TAG = "xcertplay-usb"
         const val AAC_OBJECT_TYPE_LC = 2
         const val MIN_OPUS_PACKET_BYTES = 4

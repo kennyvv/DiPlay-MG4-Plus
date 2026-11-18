@@ -27,4 +27,16 @@ class Mg4ClusterSongTest {
         assertEquals(1f, Mg4ClusterSong.fraction(300_000, 200_000)!!, 0.0001f)
         assertEquals(0f, Mg4ClusterSong.fraction(-1, 200_000)!!, 0.0001f)
     }
+
+    @Test
+    fun gradientTintKeepsTheHueDarkAndReadable() {
+        // Bright red cover: a dark red (value 0.32, saturation capped at 0.75).
+        assertEquals(0xff521414.toInt(), Mg4ClusterSong.tint(0xffff0000.toInt()))
+        // Grey cover: dark grey.
+        assertEquals(0xff525252.toInt(), Mg4ClusterSong.tint(0xff808080.toInt()))
+        // A pale blue gets more saturation, still dark and blue.
+        val blue = Mg4ClusterSong.tint(0xff8090c0.toInt())
+        assertEquals(0x52, blue and 0xff)
+        assertEquals(true, (blue shr 16 and 0xff) < (blue and 0xff))
+    }
 }

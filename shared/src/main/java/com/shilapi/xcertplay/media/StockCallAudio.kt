@@ -55,10 +55,13 @@ object StockCallAudio {
 
     /** The call downlink, played on the head unit's direct phone output. */
     class Output private constructor(private var handle: Long, val ioHandle: Int) {
-        /** Blocking write of 16-bit mono PCM at [OUTPUT_RATE]. Returns bytes written or a negative status. */
-        fun write(data: ByteArray, offset: Int, length: Int): Int {
+        /**
+         * Write of 16-bit mono PCM at [OUTPUT_RATE]. Returns bytes written (non-blocking: what fitted, 0 when full)
+         * or a negative status.
+         */
+        fun write(data: ByteArray, offset: Int, length: Int, blocking: Boolean = true): Int {
             val h = handle
-            return if (h > 0) nativeWrite(h, data, offset, length) else -1
+            return if (h > 0) nativeWrite(h, data, offset, length, blocking) else -1
         }
 
         @Synchronized
@@ -165,7 +168,7 @@ object StockCallAudio {
     @JvmStatic private external fun nativeSetPhoneDevice(on: Boolean): Int
     @JvmStatic private external fun nativeOpenOutput(rate: Int): Long
     @JvmStatic private external fun nativeOutputHandle(handle: Long): Int
-    @JvmStatic private external fun nativeWrite(handle: Long, data: ByteArray, offset: Int, length: Int): Int
+    @JvmStatic private external fun nativeWrite(handle: Long, data: ByteArray, offset: Int, length: Int, blocking: Boolean): Int
     @JvmStatic private external fun nativeCloseOutput(handle: Long)
     @JvmStatic private external fun nativeOpenInput(rate: Int, packageName: String, source: Int, flags: Int): Long
     @JvmStatic private external fun nativeRead(handle: Long, data: ByteArray, offset: Int, length: Int): Int

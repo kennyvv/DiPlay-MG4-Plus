@@ -271,12 +271,14 @@ Java_com_shilapi_xcertplay_media_StockCallAudio_nativeOutputHandle(JNIEnv *env, 
 
 JNIEXPORT jint JNICALL
 Java_com_shilapi_xcertplay_media_StockCallAudio_nativeWrite(JNIEnv *env, jclass cls, jlong handle,
-                                                            jbyteArray data, jint offset, jint length) {
+                                                            jbyteArray data, jint offset, jint length,
+                                                            jboolean blocking) {
     (void) cls;
     if (handle <= 0 || !api.resolved) return -1;
     jbyte *bytes = (*env)->GetPrimitiveArrayCritical(env, data, NULL);
     if (bytes == NULL) return -1;
-    ssize_t written = api.track_write((void *) (intptr_t) handle, bytes + offset, (size_t) length, true);
+    /* Non-blocking returns what fitted (0 when the track is full), so the caller can notice a stalled output. */
+    ssize_t written = api.track_write((void *) (intptr_t) handle, bytes + offset, (size_t) length, blocking == JNI_TRUE);
     (*env)->ReleasePrimitiveArrayCritical(env, data, bytes, JNI_ABORT);
     return (jint) written;
 }

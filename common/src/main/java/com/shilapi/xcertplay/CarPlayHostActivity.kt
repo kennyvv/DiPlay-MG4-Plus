@@ -2798,7 +2798,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 LauncherBridge.onModes(state)
                 val tookBack = before?.mainAudio == com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_ACCESSORY &&
                     state.mainAudio == com.shilapi.xcertplay.airplay.CarPlayModes.ENTITY_CONTROLLER
-                if (tookBack && AirPlayPersistence.loadModesAudio(this) && sink?.audioFocusLost() == true) {
+                if (tookBack && AirPlayPersistence.loadModesAudio(this) && sink?.audioFocusLost() == true && !voiceInProgress()) {
                     val asked = sink?.reacquireAudioFocus() == true
                     appendLog("CarPlay modes: the iPhone took the sound back, car audio focus asked again=$asked")
                 }
@@ -2821,6 +2821,10 @@ class CarPlayHostActivity : ComponentActivity() {
 
     private var clusterMapPaused = false
 
+    /** A CarPlay call or Siri is on: a call or Siri track plays, or the iPhone says so (modesChanged). */
+    private fun voiceInProgress(): Boolean =
+        sink?.voiceAudioActive() == true || controller?.modes()?.let { it.onCall || it.siriActive } == true
+
     /** True while a CarPlay music stream plays; set from media threads. */
     @Volatile private var mediaAudioRunning = false
     private val recheckCarSource = Runnable { recheckCarAudioSource() }
@@ -2841,6 +2845,11 @@ class CarPlayHostActivity : ComponentActivity() {
         if (source == packageName || !mediaAudioRunning) return
         val current = sink ?: return
         if (current.audioFocusLost()) return
+        // A call or Siri moves the car's source to its phone or voice path on purpose; leave it alone.
+        if (voiceInProgress()) {
+            appendLog("Car source: $source during a call or Siri; left alone")
+            return
+        }
         if (!AirPlayPersistence.loadRecheckCarSource(this)) {
             appendLog("Car source: $source plays instead of CarPlay music although DiPlay holds focus (recheck is off)")
             return
@@ -2857,6 +2866,11 @@ class CarPlayHostActivity : ComponentActivity() {
     private fun onCarPlayAudioFocus(change: Int, media: Boolean) {
         val target = controller ?: return
         val modes = com.shilapi.xcertplay.airplay.CarPlayModes
+        // CarPlay calls and Siri are part of the iPhone's main audio: taking or borrowing it now would cut them off.
+        if (change != android.media.AudioManager.AUDIOFOCUS_GAIN && voiceInProgress()) {
+            if (AirPlayPersistence.loadModesAudio(this)) appendLog("CarPlay modes: focus change=$change during a call or Siri; sound left with the iPhone")
+            return
+        }
         when (change) {
             android.media.AudioManager.AUDIOFOCUS_GAIN -> {
                 if (target.carReleases(modes.RESOURCE_MAIN_AUDIO, "CarPlay has the car's sound again")) {

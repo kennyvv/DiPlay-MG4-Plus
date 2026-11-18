@@ -28,8 +28,8 @@ import com.shilapi.xcertplay.transport.Iap2ArtworkTransfer
  * square: title, artist, album and a paused mark, from the iPhone's now-playing updates, and the
  * cover when album art is on ([updateArtwork]). A cover shows only for the song whose artwork
  * transfer id it carries. When the iPhone sends the track length and position, a thin bar and
- * "1:23 / 3:45" show how far the song is, moved on once a second while it plays. The cover sits in a
- * soft glow of its own colours ([GlowView]).
+ * "1:23 / 3:45" show how far the song is, moved on once a second while it plays. With a cover, the card's
+ * background is a gentle gradient from a dark tone of the cover's colour at the top to the cluster's black.
  */
 internal object Mg4ClusterSong {
     private const val TITLE_PX = 26f
@@ -39,7 +39,6 @@ internal object Mg4ClusterSong {
     private const val PADDING_PX = 18
     private const val ART_PX = 104
     private const val BAR_PX = 4
-    private const val GLOW_PX = 16
     private const val TICK_MS = 1_000L
 
     /**
@@ -88,7 +87,7 @@ internal object Mg4ClusterSong {
     private var song: CarPlaySong? = null
     private var cover: Pair<Int, Bitmap>? = null
     private var art: ImageView? = null
-    private var glow: GlowView? = null
+    private var cardView: View? = null
     private var note: TextView? = null
     private var title: TextView? = null
     private var artist: TextView? = null
@@ -169,7 +168,7 @@ internal object Mg4ClusterSong {
         song = null
         cover = null
         art = null
-        glow = null
+        cardView = null
         note = null
         title = null
         artist = null
@@ -181,8 +180,8 @@ internal object Mg4ClusterSong {
     private fun showCover() {
         val shown = coverMatches(song, cover?.first)
         art?.setImageBitmap(if (shown) cover?.second else null)
-        glow?.setCover(if (shown) cover?.second else null)
-        (art?.parent as? View)?.visibility = if (shown) View.VISIBLE else View.GONE
+        art?.visibility = if (shown) View.VISIBLE else View.GONE
+        cardView?.background = background(if (shown) cover?.second else null)
         // With a cover the card keeps title and artist; the note and album make room.
         note?.visibility = if (shown) View.GONE else View.VISIBLE
         album?.visibility = if (shown) View.GONE else View.VISIBLE
@@ -203,26 +202,12 @@ internal object Mg4ClusterSong {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
         setBackgroundColor(Mg4ClusterSquare.BACKGROUND)
+        cardView = this
         setPadding(PADDING_PX, PADDING_PX, PADDING_PX, PADDING_PX)
-        // The cover in the middle of its glow; the glow reaches GLOW_PX past each edge into the padding and the
-        // gap below, so the text does not move.
-        val frame = android.widget.FrameLayout(context).apply {
-            visibility = View.GONE
-            clipChildren = false
-        }
-        glow = GlowView(context).also { frame.addView(it, android.widget.FrameLayout.LayoutParams(-1, -1)) }
         art = ImageView(context).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
-        }.also { frame.addView(it, android.widget.FrameLayout.LayoutParams(ART_PX, ART_PX, Gravity.CENTER)) }
-        clipChildren = false
-        clipToPadding = false
-        addView(
-            frame,
-            LinearLayout.LayoutParams(ART_PX + 2 * GLOW_PX, ART_PX + 2 * GLOW_PX).apply {
-                topMargin = -GLOW_PX
-                bottomMargin = PADDING_PX / 2 - GLOW_PX
-            },
-        )
+            visibility = View.GONE
+        }.also { addView(it, LinearLayout.LayoutParams(ART_PX, ART_PX).apply { bottomMargin = PADDING_PX / 2 }) }
         note = text(context, "♪", ARTIST_PX, Color.rgb(0x8a, 0x8a, 0x8a), lines = 1).also(::addView)
         title = text(context, "", TITLE_PX, Color.WHITE, lines = 2, bold = true).also(::addView)
         artist = text(context, "", ARTIST_PX, Color.rgb(0xc8, 0xc8, 0xc8), lines = 1).also(::addView)
@@ -233,57 +218,57 @@ internal object Mg4ClusterSong {
         state = text(context, "", STATE_PX, Color.rgb(0x8a, 0x8a, 0x8a), lines = 1).also(::addView)
     }
 
-    /**
-     * A soft glow in the cover's own colours: the cover shrunk to [GLOW_GRID] px a side and drawn large with filtering
-     * (a smooth colour field), more saturated and a little brighter, faded out from the cover's edge by a radial mask.
-     */
-    private class GlowView(context: Context) : View(context) {
-        private var field: Bitmap? = null
-        private val image = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG).apply {
-            colorFilter = android.graphics.ColorMatrixColorFilter(
-                android.graphics.ColorMatrix().apply {
-                    setSaturation(GLOW_SATURATION)
-                    postConcat(android.graphics.ColorMatrix().apply { setScale(GLOW_BRIGHTNESS, GLOW_BRIGHTNESS, GLOW_BRIGHTNESS, 1f) })
-                },
-            )
-            xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
-        }
-        // A blurred square the size of the cover: the glow follows the cover's shape and fades out past its edges.
-        private val shape = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(GLOW_ALPHA, 0, 0, 0)
-            maskFilter = android.graphics.BlurMaskFilter(GLOW_PX * 0.8f, android.graphics.BlurMaskFilter.Blur.NORMAL)
-        }
-
-        init {
-            // BlurMaskFilter is drawn in software; the view is small and redraws only when the cover changes.
-            setLayerType(LAYER_TYPE_SOFTWARE, null)
-        }
-
-        fun setCover(cover: Bitmap?) {
-            field = cover?.let { glowField(it) }
-            invalidate()
-        }
-
-        override fun onDraw(canvas: android.graphics.Canvas) {
-            val bitmap = field ?: return
-            val w = width.toFloat()
-            val h = height.toFloat()
-            val layer = canvas.saveLayer(0f, 0f, w, h, null)
-            val inset = GLOW_PX * 0.6f
-            canvas.drawRoundRect(inset, inset, w - inset, h - inset, GLOW_PX.toFloat(), GLOW_PX.toFloat(), shape)
-            canvas.drawBitmap(bitmap, null, android.graphics.RectF(0f, 0f, w, h), image)
-            canvas.restoreToCount(layer)
-        }
+    /** The card's background: plain black, or with a cover a gentle gradient from [tint] of its colour at the top. */
+    private fun background(cover: Bitmap?): android.graphics.drawable.Drawable {
+        val average = cover?.let { runCatching { Bitmap.createScaledBitmap(it, 1, 1, true).getPixel(0, 0) }.getOrNull() }
+            ?: return android.graphics.drawable.ColorDrawable(Mg4ClusterSquare.BACKGROUND)
+        return android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(tint(average), Mg4ClusterSquare.BACKGROUND),
+        )
     }
 
-    /** The cover shrunk to a few pixels: its colours where they sit, for the glow. */
-    private fun glowField(cover: Bitmap): Bitmap? =
-        runCatching { Bitmap.createScaledBitmap(cover, GLOW_GRID, GLOW_GRID, true) }.getOrNull()
+    /**
+     * A dark tone of [color] (the cover's average) for the top of the gradient: its hue, a little more
+     * saturated (at most [TINT_MAX_SATURATION]), at brightness [TINT_VALUE] so white text stays easy to read.
+     * A grey cover gives a dark grey.
+     */
+    fun tint(color: Int): Int {
+        val r = (color shr 16 and 0xff) / 255f
+        val g = (color shr 8 and 0xff) / 255f
+        val b = (color and 0xff) / 255f
+        val max = maxOf(r, g, b)
+        val min = minOf(r, g, b)
+        val delta = max - min
+        val hue = when {
+            delta == 0f -> 0f
+            max == r -> 60f * (((g - b) / delta).mod(6f))
+            max == g -> 60f * ((b - r) / delta + 2f)
+            else -> 60f * ((r - g) / delta + 4f)
+        }
+        val saturation = if (max == 0f) 0f else (delta / max * TINT_SATURATION_BOOST).coerceAtMost(TINT_MAX_SATURATION)
+        return hsv(hue, saturation, TINT_VALUE)
+    }
 
-    private const val GLOW_GRID = 4
-    private const val GLOW_SATURATION = 1.6f
-    private const val GLOW_BRIGHTNESS = 1.15f
-    private const val GLOW_ALPHA = 230
+    private fun hsv(hue: Float, saturation: Float, value: Float): Int {
+        val c = value * saturation
+        val x = c * (1 - kotlin.math.abs((hue / 60f).mod(2f) - 1))
+        val m = value - c
+        val (r, g, b) = when ((hue / 60f).toInt().coerceIn(0, 5)) {
+            0 -> Triple(c, x, 0f)
+            1 -> Triple(x, c, 0f)
+            2 -> Triple(0f, c, x)
+            3 -> Triple(0f, x, c)
+            4 -> Triple(x, 0f, c)
+            else -> Triple(c, 0f, x)
+        }
+        fun channel(v: Float) = ((v + m) * 255 + 0.5f).toInt().coerceIn(0, 255)
+        return (0xff shl 24) or (channel(r) shl 16) or (channel(g) shl 8) or channel(b)
+    }
+
+    private const val TINT_VALUE = 0.32f
+    private const val TINT_SATURATION_BOOST = 1.3f
+    private const val TINT_MAX_SATURATION = 0.75f
 
     /** A thin bar: grey track, white part played. */
     private class ProgressLine(context: Context) : View(context) {
